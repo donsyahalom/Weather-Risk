@@ -81,13 +81,20 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
 .btn-sm:hover { border-color:var(--text2); color:var(--text); }
 .btn-sm.danger:hover { border-color:var(--danger); color:var(--danger); }
 
-/* ── ADMIN TABS ─────────────────────────────────────────────── */
-.admin-tabs { display:flex; gap:4px; margin-bottom:32px; border-bottom:1px solid var(--border); }
-.admin-tab { background:transparent; border:none; color:var(--text3); font-family:'DM Mono',monospace; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; padding:10px 20px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color 0.2s,border-color 0.2s; }
-.admin-tab:hover { color:var(--text2); }
+/* ── TABS (shared by admin + user) ──────────────────────────── */
+.admin-tabs, .nav-tabs { display:flex; gap:4px; margin-bottom:32px; border-bottom:1px solid var(--border); align-items:center; }
+.nav-tabs { justify-content:space-between; }
+.nav-tabs-left { display:flex; gap:4px; }
+.admin-tab, .nav-tab { background:transparent; border:none; color:var(--text3); font-family:'DM Mono',monospace; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; padding:10px 20px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color 0.2s,border-color 0.2s; }
+.admin-tab:hover, .nav-tab:hover { color:var(--text2); }
 .admin-tab.active { color:var(--admin); border-bottom-color:var(--admin); }
-.admin-panel { display:none; }
-.admin-panel.active { display:block; }
+.nav-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.nav-tab.logout { color:var(--text3); margin-left:auto; }
+.nav-tab.logout:hover { color:var(--danger); border-bottom-color:var(--danger); }
+.admin-tab.logout { color:var(--text3); margin-left:auto; }
+.admin-tab.logout:hover { color:var(--danger); border-bottom-color:var(--danger); }
+.admin-panel, .nav-panel { display:none; }
+.admin-panel.active, .nav-panel.active { display:block; }
 
 /* ── SECTION LABELS ─────────────────────────────────────────── */
 .section-label { font-size:10px; letter-spacing:0.25em; color:var(--text3); text-transform:uppercase; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
@@ -309,15 +316,15 @@ table.data-tbl tbody td { padding:10px 16px; }
     </div>
     <div class="topbar-right">
       <div class="user-chip"><div class="role-dot admin"></div><span id="adminEmailDisplay">–</span><span style="color:var(--text3);font-size:10px;margin-left:4px">· ADMIN</span></div>
-      <button class="btn-sm danger" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
 
   <div class="admin-tabs">
-    <button class="admin-tab active" onclick="switchTab('dashboard',this)">Dashboard</button>
-    <button class="admin-tab" onclick="switchTab('accounts',this)">Manage Accounts</button>
-    <button class="admin-tab" onclick="switchTab('create',this)">Create Account</button>
-    <button class="admin-tab" onclick="switchTab('password',this)">Change Password</button>
+    <button class="admin-tab active" onclick="switchAdminTab('dashboard',this)">Dashboard</button>
+    <button class="admin-tab" onclick="switchAdminTab('accounts',this)">Manage Accounts</button>
+    <button class="admin-tab" onclick="switchAdminTab('create',this)">Create Account</button>
+    <button class="admin-tab" onclick="switchAdminTab('password',this)">Change Password</button>
+    <button class="admin-tab logout" onclick="doLogout()">Sign Out</button>
   </div>
 
   <!-- Dashboard -->
@@ -420,11 +427,17 @@ table.data-tbl tbody td { padding:10px 16px; }
     <div class="topbar-right">
       <span class="badge-pill">90% CI · P5–P95</span>
       <div class="user-chip"><div class="role-dot user"></div><span id="userEmailDisplay">–</span></div>
-      <button class="btn-sm" onclick="openModal('userPassModal')">Change Password</button>
-      <button class="btn-sm danger" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
 
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchUserTab('weather',this)">🌦 Weather Analysis</button>
+    <button class="nav-tab" onclick="switchUserTab('changepass',this)">🔑 Change Password</button>
+    <button class="nav-tab logout" onclick="doLogout()">Sign Out</button>
+  </div>
+
+  <!-- Weather Panel -->
+  <div id="user-panel-weather" class="nav-panel active">
   <div class="config-panel">
     <div class="config-label">Query Parameters</div>
     <div class="config-grid">
@@ -441,7 +454,7 @@ table.data-tbl tbody td { padding:10px 16px; }
       <div class="field"><label>Joro API Key</label><input type="password" id="apiKey" placeholder="joro_sk_...  (enterprise credentials)"></div>
       <div class="field"><label>API Base URL</label><input type="text" id="apiBase" value="https://api.planette.ai/joro/v1"></div>
     </div>
-  </div>
+  </div><!-- /config-panel -->
 
   <div class="status-bar"><div class="status-dot" id="statusDot"></div><span id="statusText">Enter your Joro API key and query parameters to begin.</span></div>
   <div class="error-panel" id="errorPanel"></div>
@@ -525,23 +538,25 @@ table.data-tbl tbody td { padding:10px 16px; }
     </div>
     <div class="footnote" id="footnote"></div>
   </div>
-</div>
-</div>
+</div><!-- /results -->
+</div><!-- /user-panel-weather -->
 
-<!-- ═══ MODAL: User change own password ══════════════════════════ -->
-<div class="modal-overlay" id="userPassModal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('userPassModal')">✕</button>
-    <div class="modal-title">Change Password</div>
-    <div class="modal-sub" id="modalUserLabel">Update your account password</div>
-    <div class="field" style="margin-bottom:14px"><label>New Password</label><input type="password" id="modalNewPass" placeholder="Min 6 characters"></div>
-    <div class="field" style="margin-bottom:20px"><label>Confirm New Password</label><input type="password" id="modalNewPassConfirm" placeholder="Repeat new password"></div>
-    <button class="btn-action accent" id="userPassBtn" style="width:100%" onclick="changeUserOwnPassword()">
-      <div class="sp"></div><span class="bl">Update Password</span>
-    </button>
-    <div class="inline-msg" id="modalPassMsg"></div>
+  <!-- Change Password Panel -->
+  <div id="user-panel-changepass" class="nav-panel">
+    <div class="section-label">Account Security</div>
+    <div class="panel" style="max-width:480px">
+      <div class="panel-title">🔑 Change Your Password</div>
+      <div class="field" style="margin-bottom:14px"><label>New Password</label><input type="password" id="userNewPass" placeholder="Min 6 characters"></div>
+      <div class="field" style="margin-bottom:20px"><label>Confirm New Password</label><input type="password" id="userNewPassConfirm" placeholder="Repeat new password"></div>
+      <button class="btn-run" id="userPassTabBtn" style="width:auto;padding:12px 32px" onclick="changeUserPasswordInline()">
+        <div class="sp"></div><span class="bt">Update Password</span>
+      </button>
+      <div class="inline-msg" id="userPassTabMsg" style="margin-top:14px"></div>
+    </div>
   </div>
-</div>
+
+</div><!-- /app-shell -->
+</div><!-- /userPage -->
 
 <!-- ═══ MODAL: Delete confirm ════════════════════════════════════ -->
 <div class="modal-overlay" id="deleteModal">
@@ -842,6 +857,24 @@ async function changeUserOwnPassword() {
   setTimeout(() => closeModal('userPassModal'), 1500);
 }
 
+async function changeUserPasswordInline() {
+  const newPass = document.getElementById('userNewPass').value;
+  const confirm = document.getElementById('userNewPassConfirm').value;
+  const msg     = document.getElementById('userPassTabMsg');
+  const btn     = document.getElementById('userPassTabBtn');
+
+  if (newPass.length < 6)  return showMsg(msg, 'error', 'Password must be at least 6 characters.');
+  if (newPass !== confirm) return showMsg(msg, 'error', 'Passwords do not match.');
+
+  setLoading(btn, true);
+  const { error } = await SB.auth.updateUser({ password: newPass });
+  setLoading(btn, false);
+  if (error) return showMsg(msg, 'error', error.message);
+  document.getElementById('userNewPass').value = '';
+  document.getElementById('userNewPassConfirm').value = '';
+  showMsg(msg, 'success', '✓ Password updated successfully.');
+}
+
 /* ════════════════════════════════════════════════════════════════
    HELPERS
 ════════════════════════════════════════════════════════════════ */
@@ -850,11 +883,18 @@ function showPage(id) {
   document.getElementById(id).classList.add('active');
 }
 
-function switchTab(name, btn) {
+function switchAdminTab(name, btn) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
+}
+
+function switchUserTab(name, btn) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.nav-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('user-panel-'+name).classList.add('active');
 }
 
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
