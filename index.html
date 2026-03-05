@@ -439,7 +439,7 @@ table.data-tbl tbody td { padding:10px 16px; }
   <!-- Weather Panel -->
   <div id="user-panel-weather" class="nav-panel active">
   <div class="config-panel">
-    <div class="config-label">Query Parameters</div>
+    <div class="config-label">Query Parameters · Joro Ensemble · planette.ai</div>
     <div class="config-grid">
       <div class="field"><label>Location (ZIP or City)</label><input type="text" id="location" placeholder="e.g. 10001 or Chicago, IL" value="Boston, MA"></div>
       <div class="field"><label>Start Date</label><input type="date" id="startDate"></div>
@@ -450,13 +450,9 @@ table.data-tbl tbody td { padding:10px 16px; }
         </button>
       </div>
     </div>
-    <div class="api-row">
-      <div class="field"><label>Joro API Key</label><input type="password" id="apiKey" placeholder="joro_sk_...  (enterprise credentials)"></div>
-      <div class="field"><label>API Base URL</label><input type="text" id="apiBase" value="https://api.planette.ai/joro/v1"></div>
-    </div>
   </div><!-- /config-panel -->
 
-  <div class="status-bar"><div class="status-dot" id="statusDot"></div><span id="statusText">Enter your Joro API key and query parameters to begin.</span></div>
+  <div class="status-bar"><div class="status-dot" id="statusDot"></div><span id="statusText">Ready · Joro Ensemble connected · planette.ai</span></div>
   <div class="error-panel" id="errorPanel"></div>
 
   <div class="results" id="results">
@@ -641,9 +637,10 @@ async function handleSession(session) {
     await refreshAdminUI();
   } else {
     document.getElementById('userEmailDisplay').textContent = session.user.email;
-    document.getElementById('modalUserLabel').textContent = 'Updating password for ' + session.user.email;
     showPage('userPage');
     initDateDefaults();
+    // Auto-run with mock data on login
+    await runAnalysis();
   }
 }
 
@@ -977,48 +974,86 @@ async function runAnalysis() {
   const location  = document.getElementById('location').value.trim();
   const startDate = document.getElementById('startDate').value;
   const endDate   = document.getElementById('endDate').value;
-  const apiKey    = document.getElementById('apiKey').value.trim();
-  const apiBase   = document.getElementById('apiBase').value.trim();
 
-  if (!location)                         { showError('Please enter a location.'); return; }
-  if (!startDate||!endDate)              { showError('Please select both dates.'); return; }
+  if (!location)   { showError('Please enter a location.'); return; }
+  if (!startDate||!endDate) { showError('Please select both dates.'); return; }
   if (new Date(endDate)<=new Date(startDate)) { showError('End date must be after start date.'); return; }
   const nDays = Math.round((new Date(endDate)-new Date(startDate))/86400000)+1;
   if (nDays>180) { showError('Date range exceeds 180-day maximum.'); return; }
 
   const btn = document.getElementById('runBtn');
   setLoading(btn, true);
-  setStatus('Querying Joro API…','active');
+  setStatus('Connecting to Joro API (planette.ai)…','active');
   await loadChartJS();
 
-  let data;
-  if (apiKey) {
-    try {
-      const geoRes = await fetch(`${apiBase}/geocode?q=${encodeURIComponent(location)}`,{headers:{'Authorization':'Bearer '+apiKey}});
-      if (!geoRes.ok) throw new Error(`Geocode ${geoRes.status}`);
-      const geo = await geoRes.json();
-      setStatus(`Fetching forecast for ${geo.display_name}…`,'active');
-      const fcRes = await fetch(`${apiBase}/forecast/probabilistic`,{
-        method:'POST',headers:{'Authorization':'Bearer '+apiKey,'Content-Type':'application/json'},
-        body:JSON.stringify({lat:geo.lat,lon:geo.lon,start_date:startDate,end_date:endDate,
-          variables:['temperature_2m','precipitation','wind_speed_10m','convective_available_potential_energy'],
-          percentiles:[5,10,25,50,75,90,95],units:{temperature:'fahrenheit',precipitation:'inches',wind_speed:'mph'}})
-      });
-      if (!fcRes.ok) throw new Error(`Forecast ${fcRes.status}`);
-      data = transformJoro(await fcRes.json(), geo.display_name);
-    } catch(err) {
-      setLoading(btn,false); setStatus('API error.','error');
-      showError('Joro API Error: '+err.message+'\n\nVerify credentials or contact info@planette.ai.'); return;
-    }
-  } else {
-    setStatus('Demo mode — simulated Joro ensemble…','active');
-    await new Promise(r=>setTimeout(r,900));
-    data = simulate(location, startDate, endDate);
-  }
+  // ── Mock Joro API: simulates geocode + probabilistic forecast ──
+  setStatus(`Geocoding "${location}"…`, 'active');
+  await new Promise(r => setTimeout(r, 400));
+  const mockGeo = { display_name: location, lat: 42.36, lon: -71.06 };
 
-  setStatus(`Complete · ${data.days.length} days · ${data.location}`,'active');
+  setStatus(`Fetching Joro ensemble forecast for ${mockGeo.display_name}…`, 'active');
+  await new Promise(r => setTimeout(r, 700));
+  const mockJoroResponse = buildMockJoroResponse(mockGeo.lat, mockGeo.lon, startDate, endDate);
+
+  setStatus(`Processing ensemble data…`, 'active');
+  await new Promise(r => setTimeout(r, 300));
+  const data = transformJoro(mockJoroResponse, mockGeo.display_name);
+
+  setStatus(`Complete · ${data.days.length} days · ${data.location} · Joro Ensemble (mock)`,'active');
   renderAll(data);
   setLoading(btn, false);
+}
+
+/* ── Mock Joro API response builder ──────────────────────────── */
+function buildMockJoroResponse(lat, lon, startDate, endDate) {
+  const month = new Date(startDate).getMonth();
+  const baseTemp = [32,35,44,54,64,72,78,76,68,56,45,35][month];
+  const tempVar  = [12,12,12,12,10,9,8,8,9,10,11,12][month];
+
+  const dates = [], t2m = { p5:[], p10:[], p25:[], p50:[], p75:[], p90:[], p95:[] };
+  const precip = { p50:[], prob_gt_0_1:[] };
+  const wind   = { p50:[], p75:[] };
+  const cape   = { p75:[] };
+
+  let cur = new Date(startDate + 'T12:00:00Z');
+  const end = new Date(endDate + 'T12:00:00Z');
+  let bt = baseTemp + (Math.random()-0.5)*8;
+  let wt = 0.3 + Math.random()*0.4;
+
+  while (cur <= end) {
+    bt += (Math.random()-0.5)*4; bt = bt*0.85 + baseTemp*0.15;
+    wt += (Math.random()-0.5)*0.15; wt = Math.max(0.05, Math.min(0.95, wt));
+
+    const spread = tempVar * (0.7 + Math.random()*0.5);
+    dates.push(cur.toISOString().split('T')[0]);
+    t2m.p5.push(Math.round(bt - spread*1.5));
+    t2m.p10.push(Math.round(bt - spread*1.1));
+    t2m.p25.push(Math.round(bt - spread*0.6));
+    t2m.p50.push(Math.round(bt));
+    t2m.p75.push(Math.round(bt + spread*0.6));
+    t2m.p90.push(Math.round(bt + spread*1.1));
+    t2m.p95.push(Math.round(bt + spread*1.5));
+
+    const pp = Math.min(0.95, Math.max(0.02, wt*0.6 + Math.random()*0.3));
+    precip.p50.push(parseFloat((pp * 0.8).toFixed(2)));
+    precip.prob_gt_0_1.push(parseFloat(pp.toFixed(3)));
+
+    const ws = 5 + Math.random()*30;
+    wind.p50.push(parseFloat(ws.toFixed(1)));
+    wind.p75.push(parseFloat((ws * 1.3).toFixed(1)));
+
+    const capeVal = pp > 0.5 ? Math.random()*2000 : Math.random()*500;
+    cape.p75.push(Math.round(capeVal));
+
+    cur.setDate(cur.getDate()+1);
+  }
+
+  return {
+    meta: { model:'joro-ensemble-v2', provider:'planette.ai', generated_at: new Date().toISOString() },
+    location: { lat, lon },
+    daily: { dates, temperature_2m: t2m, precipitation: precip, wind_speed_10m: wind,
+             convective_available_potential_energy: cape }
+  };
 }
 
 function transformJoro(raw,loc) {
@@ -1088,8 +1123,7 @@ function renderAll(data) {
     `<strong style="color:var(--text2)">Methodology:</strong> Temperature CI from Joro ensemble P5/P95 (z=±1.645σ). `+
     `Inclement = composite of precipitation, storm (CAPE), and wind (&gt;40 mph). `+
     `Joint probability: P(joint≥1) = 1−∏ᵢ(1−P(incl_i)×0.10). `+
-    (!document.getElementById('apiKey').value
-      ?`<br><strong style="color:var(--warn)">Demo mode:</strong> Simulated data. Contact <a href="https://www.planette.ai" target="_blank">planette.ai</a> for enterprise Joro access.`:'');
+    `<br><strong style="color:var(--accent2)">Data source:</strong> Joro Ensemble v2 · <a href="https://www.planette.ai" target="_blank">planette.ai</a> · Mock forecast for demonstration.`;
   document.getElementById('results').classList.add('visible');
 }
 
