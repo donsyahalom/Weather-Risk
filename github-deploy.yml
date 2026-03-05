@@ -1,0 +1,49 @@
+# ================================================================
+#  WeatherMyTrip · GitHub Actions — Deploy to Netlify
+#  File: .github/workflows/deploy.yml
+#
+#  Required GitHub Secrets (repo Settings → Secrets → Actions):
+#    NETLIFY_AUTH_TOKEN   — from Netlify → User Settings → Applications
+#    NETLIFY_SITE_ID      — from Netlify → Site Settings → General
+# ================================================================
+
+name: Deploy to Netlify
+
+on:
+  push:
+    branches:
+      - main          # auto-deploy on every push to main
+  workflow_dispatch:  # also allow manual trigger from GitHub UI
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Deploy to Netlify (no build step — pure static site)
+      - name: Deploy to Netlify
+        uses: netlify/actions/cli@master
+        with:
+          args: deploy --dir=. --prod
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID:    ${{ secrets.NETLIFY_SITE_ID }}
+
+# ================================================================
+#  SETUP CHECKLIST
+#  ──────────────────────────────────────────────────────────────
+#  1. Push this file to your repo at .github/workflows/deploy.yml
+#
+#  2. Add secrets in GitHub:
+#     repo → Settings → Secrets and variables → Actions
+#       NETLIFY_AUTH_TOKEN  (Netlify → User Settings → Applications → New token)
+#       NETLIFY_SITE_ID     (Netlify → Site Settings → General → Site ID)
+#
+#  3. Every push to `main` will auto-deploy to your Netlify site.
+#     Manual runs: Actions tab → "Deploy to Netlify" → Run workflow
+# ================================================================
