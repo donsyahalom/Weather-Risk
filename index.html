@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WeatherMyTrip · Weather Risk Intelligence</title>
+<title>Joro · Weather Risk Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -23,89 +23,64 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
 .orb-2 { width:400px;height:400px; background:radial-gradient(circle,rgba(255,107,53,0.1),transparent 70%); bottom:0;right:-150px; }
 .orb-3 { width:350px;height:350px; background:radial-gradient(circle,rgba(196,181,253,0.1),transparent 70%); top:30%;right:-100px; }
 
-/* ── PAGE SYSTEM ────────────────────────────────────────────── */
+/* PAGE SYSTEM */
 .page { display:none; position:relative; z-index:1; }
 .page.active { display:block; }
-#loadingPage { min-height:100vh; display:flex; align-items:center; justify-content:center; }
-#loadingPage.active { display:flex; }
+
+/* LOGIN */
 #loginPage { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
 #loginPage.active { display:flex; }
-
-/* ── LOADING ────────────────────────────────────────────────── */
-.boot-wrap { display:flex; flex-direction:column; align-items:center; gap:16px; }
-.boot-logo { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--text); letter-spacing:-0.02em; }
-.boot-logo span { color:var(--accent); }
-.boot-spinner { width:32px;height:32px; border:3px solid rgba(255,255,255,0.15); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; }
-@keyframes spin { to { transform:rotate(360deg); } }
-@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
-
-/* ── LOGIN BOX ──────────────────────────────────────────────── */
-.login-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:48px 44px; width:100%; max-width:420px; position:relative; overflow:hidden; }
+.login-box { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:48px 44px; width:100%; max-width:420px; position:relative; overflow:hidden; }
 .login-box::before { content:''; position:absolute; top:0;left:0;right:0;height:3px; background:linear-gradient(90deg,var(--accent),var(--admin)); }
-.login-brand { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-.login-brand-icon { width:36px;height:36px; background:linear-gradient(135deg,var(--accent),var(--admin)); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
-.login-brand-name { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; letter-spacing:-0.02em; }
-.login-brand-name span { color:var(--accent); }
-.login-tagline { font-size:11px; color:var(--text3); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:32px; }
+.login-logo-sup { font-size:10px; letter-spacing:0.25em; color:var(--accent2); text-transform:uppercase; margin-bottom:6px; }
+.login-logo { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; letter-spacing:-0.03em; margin-bottom:32px; }
+.login-logo span { color:var(--accent); }
 .login-field { display:flex; flex-direction:column; gap:7px; margin-bottom:16px; }
 .login-field label { font-size:11px; letter-spacing:0.12em; color:var(--text2); text-transform:uppercase; }
 .login-field input { background:var(--bg); border:1px solid var(--border2); color:var(--text); font-family:'DM Mono',monospace; font-size:14px; padding:11px 14px; border-radius:3px; outline:none; transition:border-color 0.2s,box-shadow 0.2s; }
 .login-field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
 .login-field input::placeholder { color:var(--text3); }
-.login-error { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; font-size:12px; padding:10px 14px; border-radius:3px; margin-bottom:16px; display:none; }
-.btn-primary { width:100%; background:var(--accent); color:#fff; border:none; font-family:'Syne',sans-serif; font-size:14px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:13px; border-radius:3px; cursor:pointer; transition:background 0.2s,box-shadow 0.2s,transform 0.1s; display:flex; align-items:center; justify-content:center; gap:8px; }
-.btn-primary:hover { background:#74aaff; box-shadow:0 0 24px rgba(91,155,255,0.4); }
+.login-error { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); color:#f87171; font-size:12px; padding:10px 14px; border-radius:3px; margin-bottom:16px; display:none; }
+.btn-primary { width:100%; background:var(--accent); color:#fff; border:none; font-family:'Syne',sans-serif; font-size:14px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:13px; border-radius:3px; cursor:pointer; transition:background 0.2s,box-shadow 0.2s,transform 0.1s; }
+.btn-primary:hover { background:#6080ff; box-shadow:0 0 24px rgba(79,114,255,0.3); }
 .btn-primary:active { transform:scale(0.98); }
-.btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
-.btn-primary .sp { width:14px;height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; display:none; }
-.btn-primary.loading .sp { display:block; }
-.btn-primary.loading .bt { display:none; }
 .login-footer { font-size:11px; color:var(--text3); text-align:center; margin-top:20px; line-height:1.6; }
 
-/* ── APP CHROME ─────────────────────────────────────────────── */
+/* CHROME */
 .app-shell { max-width:1160px; margin:0 auto; padding:32px 24px 80px; }
 .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; border-bottom:1px solid var(--border); padding-bottom:20px; }
-.topbar-brand { display:flex; align-items:center; gap:10px; }
-.topbar-brand-icon { width:32px;height:32px; background:linear-gradient(135deg,var(--accent),var(--admin)); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
-.topbar-brand-name { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; letter-spacing:-0.02em; line-height:1; }
-.topbar-brand-name span.ac { color:var(--accent); }
-.topbar-brand-name span.tag { font-size:13px; color:var(--admin); font-weight:600; letter-spacing:0.04em; margin-left:6px; }
-.topbar-brand-sub { font-size:10px; color:var(--text3); letter-spacing:0.15em; text-transform:uppercase; }
-.topbar-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.user-chip { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:3px; padding:7px 13px; font-size:12px; }
-.role-dot { width:7px;height:7px;border-radius:50%;flex-shrink:0; }
+.logo-area { display:flex; flex-direction:column; gap:3px; }
+.logo-sup { font-size:10px; letter-spacing:0.25em; color:var(--accent2); text-transform:uppercase; }
+.logo { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; letter-spacing:-0.03em; line-height:1; }
+.logo span.ac { color:var(--accent); }
+.topbar-right { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.user-chip { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:3px; padding:7px 14px; font-size:12px; }
+.role-dot { width:7px;height:7px;border-radius:50%; }
 .role-dot.admin { background:var(--admin); box-shadow:0 0 6px var(--admin); }
 .role-dot.user  { background:var(--success); box-shadow:0 0 6px var(--success); }
-.badge-pill { font-size:10px; letter-spacing:0.15em; color:var(--text3); text-transform:uppercase; border:1px solid var(--border2); padding:4px 10px; border-radius:2px; background:var(--surface); }
+.badge { font-size:10px; letter-spacing:0.15em; color:var(--text3); text-transform:uppercase; border:1px solid var(--border2); padding:4px 10px; border-radius:2px; background:var(--surface); }
 .btn-sm { background:transparent; border:1px solid var(--border2); color:var(--text2); font-family:'DM Mono',monospace; font-size:12px; padding:7px 14px; border-radius:3px; cursor:pointer; transition:border-color 0.2s,color 0.2s; white-space:nowrap; }
 .btn-sm:hover { border-color:var(--text2); color:var(--text); }
 .btn-sm.danger:hover { border-color:var(--danger); color:var(--danger); }
 
-/* ── TABS (shared by admin + user) ──────────────────────────── */
-.admin-tabs, .nav-tabs { display:flex; gap:4px; margin-bottom:32px; border-bottom:1px solid var(--border); align-items:center; }
-.nav-tabs { justify-content:space-between; }
-.nav-tabs-left { display:flex; gap:4px; }
-.admin-tab, .nav-tab { background:transparent; border:none; color:var(--text3); font-family:'DM Mono',monospace; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; padding:10px 20px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color 0.2s,border-color 0.2s; }
-.admin-tab:hover, .nav-tab:hover { color:var(--text2); }
+/* ADMIN TABS */
+.admin-tabs { display:flex; gap:4px; margin-bottom:32px; border-bottom:1px solid var(--border); }
+.admin-tab { background:transparent; border:none; color:var(--text3); font-family:'DM Mono',monospace; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; padding:10px 20px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color 0.2s,border-color 0.2s; }
+.admin-tab:hover { color:var(--text2); }
 .admin-tab.active { color:var(--admin); border-bottom-color:var(--admin); }
-.nav-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
-.nav-tab.logout { color:var(--text3); margin-left:auto; }
-.nav-tab.logout:hover { color:var(--danger); border-bottom-color:var(--danger); }
-.admin-tab.logout { color:var(--text3); margin-left:auto; }
-.admin-tab.logout:hover { color:var(--danger); border-bottom-color:var(--danger); }
-.admin-panel, .nav-panel { display:none; }
-.admin-panel.active, .nav-panel.active { display:block; }
+.admin-panel { display:none; }
+.admin-panel.active { display:block; }
 
-/* ── SECTION LABELS ─────────────────────────────────────────── */
+/* SECTIONS */
 .section-label { font-size:10px; letter-spacing:0.25em; color:var(--text3); text-transform:uppercase; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
 .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
 
-/* ── PANELS ─────────────────────────────────────────────────── */
+/* PANELS */
 .panel { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:28px 32px; margin-bottom:24px; position:relative; }
 .panel-admin-accent::before { content:''; position:absolute; top:0;left:0;right:0;height:2px; background:linear-gradient(90deg,var(--admin),var(--accent)); }
 .panel-title { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-bottom:20px; color:var(--text); display:flex; align-items:center; gap:10px; }
 
-/* ── FORM FIELDS ────────────────────────────────────────────── */
+/* FIELDS */
 .field { display:flex; flex-direction:column; gap:8px; }
 .field label { font-size:11px; letter-spacing:0.1em; color:var(--text2); text-transform:uppercase; }
 .field input,.field select { background:var(--bg); border:1px solid var(--border2); color:var(--text); font-family:'DM Mono',monospace; font-size:14px; padding:10px 14px; border-radius:3px; outline:none; transition:border-color 0.2s,box-shadow 0.2s; width:100%; }
@@ -115,31 +90,27 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
 .form-row-3 { grid-template-columns:1fr 1fr 1fr; }
 .form-row-2 { grid-template-columns:1fr 1fr; }
 
-/* ── BUTTONS ────────────────────────────────────────────────── */
-.btn-action { background:var(--admin); color:#fff; border:none; font-family:'Syne',sans-serif; font-size:13px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:11px 24px; border-radius:3px; cursor:pointer; transition:background 0.2s,box-shadow 0.2s,transform 0.1s; display:inline-flex; align-items:center; gap:8px; }
-.btn-action:hover { background:#d8b4fe; box-shadow:0 0 20px var(--admin-glow); }
+/* BUTTONS */
+.btn-action { background:var(--admin); color:#fff; border:none; font-family:'Syne',sans-serif; font-size:13px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:11px 24px; border-radius:3px; cursor:pointer; transition:background 0.2s,box-shadow 0.2s,transform 0.1s; }
+.btn-action:hover { background:#c4b5fd; box-shadow:0 0 20px var(--admin-glow); }
 .btn-action:active { transform:scale(0.98); }
-.btn-action:disabled { opacity:0.5; cursor:not-allowed; }
 .btn-action.accent { background:var(--accent); }
-.btn-action.accent:hover { background:#74aaff; box-shadow:0 0 20px var(--accent-glow); }
+.btn-action.accent:hover { background:#6080ff; box-shadow:0 0 20px var(--accent-glow); }
 .btn-action.danger-btn { background:var(--danger); }
 .btn-action.danger-btn:hover { background:#dc2626; }
-.btn-action .sp { width:13px;height:13px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; display:none; }
-.btn-action.loading .sp { display:block; }
-.btn-action.loading .bl { display:none; }
 
 .inline-msg { font-size:12px; padding:10px 14px; border-radius:3px; margin-top:12px; display:none; }
 .inline-msg.success { background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.3); color:var(--success); }
-.inline-msg.error   { background:rgba(239,68,68,0.1);  border:1px solid rgba(239,68,68,0.3);  color:#fca5a5; }
+.inline-msg.error   { background:rgba(239,68,68,0.1);  border:1px solid rgba(239,68,68,0.3);  color:#f87171; }
 
-/* ── STAT CARDS ─────────────────────────────────────────────── */
+/* STATS */
 .stat-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:28px; }
 .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:20px 22px; }
 .stat-card-tag { font-size:10px; letter-spacing:0.15em; color:var(--text3); text-transform:uppercase; margin-bottom:8px; }
 .stat-card-val { font-family:'Syne',sans-serif; font-size:34px; font-weight:700; line-height:1; }
 .stat-card-sub { font-size:11px; color:var(--text2); margin-top:4px; }
 
-/* ── ACCOUNTS TABLE ─────────────────────────────────────────── */
+/* ACCOUNT TABLE */
 .accounts-table-wrap { overflow-x:auto; }
 table.accounts { width:100%; border-collapse:collapse; font-size:13px; }
 table.accounts thead th { background:var(--surface2); color:var(--text3); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); white-space:nowrap; }
@@ -148,14 +119,14 @@ table.accounts tbody tr:hover { background:var(--surface2); }
 table.accounts tbody tr:last-child { border-bottom:none; }
 table.accounts tbody td { padding:11px 14px; }
 .pill { display:inline-block; font-size:10px; letter-spacing:0.08em; padding:2px 8px; border-radius:2px; text-transform:uppercase; }
-.pill-admin { background:rgba(196,181,253,0.15); color:var(--admin); }
+.pill-admin { background:rgba(167,139,250,0.12); color:var(--admin); }
 .pill-user  { background:rgba(52,211,153,0.12);  color:var(--success); }
 .tbl-btn { background:transparent; border:1px solid var(--border2); color:var(--text2); font-family:'DM Mono',monospace; font-size:11px; padding:4px 10px; border-radius:2px; cursor:pointer; transition:all 0.15s; margin-right:4px; }
 .tbl-btn:hover { border-color:var(--accent); color:var(--accent); }
 .tbl-btn.del:hover { border-color:var(--danger); color:var(--danger); }
 
-/* ── MODALS ─────────────────────────────────────────────────── */
-.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,30,80,0.9); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; padding:20px; }
+/* MODALS */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(7,8,13,0.88); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; padding:20px; }
 .modal-overlay.open { display:flex; }
 .modal { background:var(--surface); border:1px solid var(--border2); border-radius:6px; padding:36px 40px; width:100%; max-width:440px; position:relative; }
 .modal-title { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; margin-bottom:6px; }
@@ -163,7 +134,7 @@ table.accounts tbody td { padding:11px 14px; }
 .modal-close { position:absolute; top:16px; right:16px; background:transparent; border:none; color:var(--text3); font-size:18px; cursor:pointer; line-height:1; transition:color 0.2s; }
 .modal-close:hover { color:var(--text); }
 
-/* ── WEATHER PANEL ──────────────────────────────────────────── */
+/* USER WEATHER PANEL */
 .config-panel { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:28px 32px; margin-bottom:32px; }
 .config-label { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--text3); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
 .config-label::after { content:''; flex:1; height:1px; background:var(--border); }
@@ -171,23 +142,26 @@ table.accounts tbody td { padding:11px 14px; }
 .config-grid .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
 .api-row { display:grid; grid-template-columns:1fr 240px; gap:16px; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); }
 .api-row .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+
 .btn-run { background:var(--accent); color:#fff; border:none; font-family:'Syne',sans-serif; font-size:14px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; padding:12px 28px; border-radius:3px; cursor:pointer; transition:background 0.2s,transform 0.1s,box-shadow 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; white-space:nowrap; width:100%; }
-.btn-run:hover { background:#74aaff; box-shadow:0 0 24px rgba(91,155,255,0.4); }
+.btn-run:hover { background:#6080ff; box-shadow:0 0 24px rgba(79,114,255,0.3); }
 .btn-run:active { transform:scale(0.98); }
 .btn-run:disabled { opacity:0.4; cursor:not-allowed; }
-.btn-run .sp { width:14px;height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; display:none; }
-.btn-run.loading .sp { display:block; }
-.btn-run.loading .bt { display:none; }
+.btn-run .spinner { width:14px;height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; display:none; }
+.btn-run.loading .spinner { display:block; }
+.btn-run.loading .btn-text { display:none; }
+@keyframes spin { to { transform:rotate(360deg); } }
 
 .status-bar { font-size:12px; color:var(--text2); padding:10px 0; display:flex; align-items:center; gap:8px; min-height:36px; }
 .status-dot { width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0; }
 .status-dot.active { background:var(--success);box-shadow:0 0 6px var(--success);animation:pulse 1.5s infinite; }
 .status-dot.error { background:var(--warn); }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
 .error-panel { background:rgba(255,107,53,0.07); border:1px solid rgba(255,107,53,0.25); border-radius:4px; padding:16px 20px; margin-bottom:24px; font-size:13px; color:var(--warn); display:none; white-space:pre-wrap; }
 .results { display:none; }
 .results.visible { display:block; }
 
-/* ── WEATHER RESULTS ────────────────────────────────────────── */
 .summary-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
 .card { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:20px 22px; position:relative; overflow:hidden; }
 .card::before { content:''; position:absolute; top:0;left:0;right:0;height:2px; }
@@ -200,14 +174,16 @@ table.accounts tbody td { padding:11px 14px; }
 .card.temp-low  .card-value { color:var(--cold); }
 .card.temp-mid  .card-value { color:var(--accent2); }
 .card.temp-high .card-value { color:var(--warn); }
-.card.risk      .card-value { color:#ff8c6b; }
+.card.risk      .card-value { color:#ff6b6b; }
 .card-sub { font-size:11px; color:var(--text2); }
+
 .chart-section { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:24px; margin-bottom:24px; }
 .chart-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
 .chart-title { font-family:'Syne',sans-serif; font-size:16px; font-weight:600; }
 .chart-legend { display:flex; gap:20px; font-size:11px; color:var(--text2); flex-wrap:wrap; }
 .legend-item { display:flex; align-items:center; gap:6px; }
 .legend-dot { width:10px;height:3px;border-radius:2px; }
+
 .risk-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
 .risk-card { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:22px 24px; }
 .risk-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:600; margin-bottom:18px; display:flex; align-items:center; gap:10px; }
@@ -218,13 +194,15 @@ table.accounts tbody td { padding:11px 14px; }
 .prob-bar-fill { height:100%; border-radius:3px; transition:width 1s cubic-bezier(0.4,0,0.2,1); }
 .gauge-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; padding:8px 0; }
 .gauge-svg { width:180px; }
-.joint-callout { background:linear-gradient(135deg,rgba(91,155,255,0.08),rgba(255,107,53,0.08)); border:1px solid var(--border2); border-radius:4px; padding:24px 28px; display:grid; grid-template-columns:auto 1fr auto; gap:24px; align-items:center; margin-bottom:24px; }
+
+.joint-callout { background:linear-gradient(135deg,rgba(79,114,255,0.06),rgba(255,107,53,0.06)); border:1px solid var(--border2); border-radius:4px; padding:24px 28px; display:grid; grid-template-columns:auto 1fr auto; gap:24px; align-items:center; margin-bottom:24px; }
 .joint-icon { font-size:36px; }
 .joint-text h3 { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-bottom:6px; }
 .joint-text p { font-size:12px; color:var(--text2); line-height:1.6; max-width:480px; }
 .joint-prob { text-align:right; }
 .joint-prob-val { font-family:'Syne',sans-serif; font-size:42px; font-weight:800; background:linear-gradient(135deg,var(--accent2),var(--warn)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1; }
 .joint-prob-label { font-size:11px; color:var(--text3); letter-spacing:0.1em; text-transform:uppercase; }
+
 .table-section { background:var(--surface); border:1px solid var(--border); border-radius:4px; overflow:hidden; margin-bottom:24px; }
 .table-header { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:8px; }
 .table-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:600; }
@@ -240,11 +218,12 @@ table.data-tbl tbody td { padding:10px 16px; }
 .badge-mod    { background:rgba(251,191,36,0.12);  color:#fbbf24; }
 .badge-high   { background:rgba(255,107,53,0.12);  color:var(--warn); }
 .badge-severe { background:rgba(239,68,68,0.15);   color:#ef4444; }
+
 .footnote { font-size:11px; color:var(--text3); border-top:1px solid var(--border); padding-top:20px; line-height:1.8; }
 .footnote a { color:var(--accent2); text-decoration:none; }
 .footnote a:hover { text-decoration:underline; }
 
-/* ── RESPONSIVE ─────────────────────────────────────────────── */
+/* RESPONSIVE */
 @media(max-width:900px){
   .config-grid { grid-template-columns:1fr 1fr; }
   .summary-cards { grid-template-columns:1fr 1fr; }
@@ -271,22 +250,11 @@ table.data-tbl tbody td { padding:10px 16px; }
 <div class="orb orb-2"></div>
 <div class="orb orb-3"></div>
 
-<!-- ═══ LOADING ═════════════════════════════════════════════════ -->
-<div id="loadingPage" class="page active">
-  <div class="boot-wrap">
-    <div class="boot-logo">Weather<span>MyTrip</span></div>
-    <div class="boot-spinner"></div>
-  </div>
-</div>
-
-<!-- ═══ LOGIN ════════════════════════════════════════════════════ -->
-<div id="loginPage" class="page">
+<!-- ═══ LOGIN ══════════════════════════════════════════════════════════════════ -->
+<div id="loginPage" class="page active">
   <div class="login-box">
-    <div class="login-brand">
-      <div class="login-brand-icon">🌦</div>
-      <div class="login-brand-name">Weather<span>MyTrip</span></div>
-    </div>
-    <div class="login-tagline">Weather Risk Intelligence · Powered by Joro</div>
+    <div class="login-logo-sup">planette.ai · joro</div>
+    <div class="login-logo">Weather<span>Risk</span></div>
     <div class="login-field">
       <label>Email</label>
       <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="username">
@@ -299,23 +267,22 @@ table.data-tbl tbody td { padding:10px 16px; }
     <button class="btn-primary" id="loginBtn" onclick="doLogin()">
       <div class="sp"></div><span class="bt">Sign In</span>
     </button>
-    <div class="login-footer">Enterprise access only · <a href="https://www.planette.ai" target="_blank" style="color:var(--accent2);text-decoration:none">planette.ai</a></div>
+    <div class="login-footer">Enterprise access only · Powered by <strong style="color:var(--accent2)">Planette.ai Joro</strong></div>
   </div>
 </div>
 
-<!-- ═══ ADMIN PORTAL ═════════════════════════════════════════════ -->
+<!-- ═══ ADMIN PORTAL ════════════════════════════════════════════════════════════ -->
 <div id="adminPage" class="page">
 <div class="app-shell">
+
   <div class="topbar">
-    <div>
-      <div class="topbar-brand">
-        <div class="topbar-brand-icon">🌦</div>
-        <div class="topbar-brand-name">Weather<span class="ac">MyTrip</span><span class="tag">ADMIN</span></div>
-      </div>
-      <div class="topbar-brand-sub" style="margin-top:3px;margin-left:42px">Weather Risk Intelligence</div>
+    <div class="logo-area">
+      <div class="logo-sup">planette.ai · joro</div>
+      <div class="logo">Weather<span class="ac">Risk</span> <span style="font-size:15px;color:var(--admin);font-weight:600;letter-spacing:0.06em;">ADMIN</span></div>
     </div>
     <div class="topbar-right">
-      <div class="user-chip"><div class="role-dot admin"></div><span id="adminEmailDisplay">–</span><span style="color:var(--text3);font-size:10px;margin-left:4px">· ADMIN</span></div>
+      <div class="user-chip"><div class="role-dot admin"></div><span id="adminEmailDisplay">–</span><span style="color:var(--text3);font-size:10px;margin-left:4px;">· ADMIN</span></div>
+      <button class="btn-sm danger" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
 
@@ -324,22 +291,17 @@ table.data-tbl tbody td { padding:10px 16px; }
     <button class="admin-tab" onclick="switchAdminTab('accounts',this)">Manage Accounts</button>
     <button class="admin-tab" onclick="switchAdminTab('create',this)">Create Account</button>
     <button class="admin-tab" onclick="switchAdminTab('password',this)">Change Password</button>
-    <button class="admin-tab logout" onclick="doLogout()">Sign Out</button>
   </div>
 
   <!-- Dashboard -->
   <div id="panel-dashboard" class="admin-panel active">
-    <div class="stat-cards">
-      <div class="stat-card"><div class="stat-card-tag">Total Accounts</div><div class="stat-card-val" id="statTotal">–</div><div class="stat-card-sub">All roles</div></div>
-      <div class="stat-card"><div class="stat-card-tag">User Accounts</div><div class="stat-card-val" id="statUsers">–</div><div class="stat-card-sub">Active seats</div></div>
-      <div class="stat-card"><div class="stat-card-tag">Admin Accounts</div><div class="stat-card-val" id="statAdmins">–</div><div class="stat-card-sub">Full access</div></div>
-    </div>
+    <div class="stat-cards" id="statCards"></div>
     <div class="section-label">All Accounts</div>
     <div class="panel panel-admin-accent">
       <div class="accounts-table-wrap">
         <table class="accounts">
           <thead><tr><th>Email</th><th>Role</th><th>Created</th><th>Status</th></tr></thead>
-          <tbody id="dashTable"><tr><td colspan="4" style="color:var(--text3);padding:20px;text-align:center">Loading…</td></tr></tbody>
+          <tbody id="dashTable"></tbody>
         </table>
       </div>
     </div>
@@ -347,12 +309,12 @@ table.data-tbl tbody td { padding:10px 16px; }
 
   <!-- Manage Accounts -->
   <div id="panel-accounts" class="admin-panel">
-    <div class="section-label">All Accounts</div>
+    <div class="section-label">User Accounts</div>
     <div class="panel panel-admin-accent">
       <div class="accounts-table-wrap">
         <table class="accounts">
           <thead><tr><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
-          <tbody id="accountsTable"><tr><td colspan="4" style="color:var(--text3);padding:20px;text-align:center">Loading…</td></tr></tbody>
+          <tbody id="accountsTable"></tbody>
         </table>
       </div>
     </div>
@@ -368,12 +330,10 @@ table.data-tbl tbody td { padding:10px 16px; }
         <div class="field"><label>Role</label><select id="newRole"><option value="user">User</option><option value="admin">Admin</option></select></div>
       </div>
       <div class="form-row form-row-2">
-        <div class="field"><label>Password</label><input type="password" id="newPass" placeholder="Minimum 6 characters"></div>
+        <div class="field"><label>Password</label><input type="password" id="newPass" placeholder="Minimum 8 characters"></div>
         <div class="field"><label>Confirm Password</label><input type="password" id="newPassConfirm" placeholder="Repeat password"></div>
       </div>
-      <button class="btn-action" id="createBtn" onclick="createAccount()">
-        <div class="sp"></div><span class="bl">Create Account</span>
-      </button>
+      <button class="btn-action" onclick="createAccount()">Create Account</button>
       <div class="inline-msg" id="createMsg"></div>
     </div>
   </div>
@@ -381,78 +341,70 @@ table.data-tbl tbody td { padding:10px 16px; }
   <!-- Change Password -->
   <div id="panel-password" class="admin-panel">
     <div class="section-label">Password Management</div>
-    <div class="panel panel-admin-accent" style="margin-bottom:20px">
+    <div class="panel panel-admin-accent" style="margin-bottom:20px;">
       <div class="panel-title">🔑 Change Your Admin Password</div>
-      <div class="form-row form-row-2">
+      <div class="form-row form-row-3">
+        <div class="field"><label>Current Password</label><input type="password" id="selfOldPass" placeholder="Current password"></div>
         <div class="field"><label>New Password</label><input type="password" id="selfNewPass" placeholder="New password"></div>
-        <div class="field"><label>Confirm New Password</label><input type="password" id="selfNewPassConfirm" placeholder="Repeat new password"></div>
+        <div class="field"><label>Confirm New</label><input type="password" id="selfNewPassConfirm" placeholder="Repeat new password"></div>
       </div>
-      <button class="btn-action" id="selfPassBtn" onclick="changeOwnPassword()">
-        <div class="sp"></div><span class="bl">Update My Password</span>
-      </button>
+      <button class="btn-action" onclick="changeOwnPassword()">Update My Password</button>
       <div class="inline-msg" id="selfPassMsg"></div>
     </div>
     <div class="panel panel-admin-accent">
-      <div class="panel-title">🔄 Reset Any User's Password</div>
+      <div class="panel-title">🔄 Reset a User's Password</div>
       <div class="form-row form-row-3">
-        <div class="field"><label>Select Account</label><select id="resetUserSelect"><option value="">— choose account —</option></select></div>
+        <div class="field"><label>Select Account</label><select id="resetUserSelect"><option value="">— choose —</option></select></div>
         <div class="field"><label>New Password</label><input type="password" id="resetNewPass" placeholder="New password"></div>
-        <div class="field"><label>Confirm Password</label><input type="password" id="resetNewPassConfirm" placeholder="Repeat password"></div>
+        <div class="field"><label>Confirm</label><input type="password" id="resetNewPassConfirm" placeholder="Repeat password"></div>
       </div>
-      <p style="font-size:11px;color:var(--text3);margin-bottom:16px;line-height:1.6">
-        ⓘ A password reset email will be sent to the selected user. To force-reset without email, use
-        <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--accent2);text-decoration:none">Supabase Dashboard → Auth → Users</a>.
-      </p>
-      <button class="btn-action accent" id="resetPassBtn" onclick="resetUserPassword()">
-        <div class="sp"></div><span class="bl">Send Reset Email</span>
-      </button>
+      <button class="btn-action accent" onclick="resetUserPassword()">Reset Password</button>
       <div class="inline-msg" id="resetPassMsg"></div>
     </div>
   </div>
 
-</div><!-- /app-shell -->
-</div><!-- /adminPage -->
+</div>
+</div>
 
-<!-- ═══ USER PORTAL ═══════════════════════════════════════════════ -->
+<!-- ═══ USER PORTAL ═════════════════════════════════════════════════════════════ -->
 <div id="userPage" class="page">
 <div class="app-shell">
+
   <div class="topbar">
-    <div>
-      <div class="topbar-brand">
-        <div class="topbar-brand-icon">🌦</div>
-        <div class="topbar-brand-name">Weather<span class="ac">MyTrip</span></div>
-      </div>
-      <div class="topbar-brand-sub" style="margin-top:3px;margin-left:42px">Weather Risk Intelligence · Joro Ensemble</div>
+    <div class="logo-area">
+      <div class="logo-sup">planette.ai · joro</div>
+      <div class="logo">Weather<span class="ac">Risk</span></div>
     </div>
     <div class="topbar-right">
-      <span class="badge-pill">90% CI · P5–P95</span>
+      <span class="badge">90% CI · P5–P95</span>
       <div class="user-chip"><div class="role-dot user"></div><span id="userEmailDisplay">–</span></div>
+      <button class="btn-sm" onclick="openModal('userPassModal')">Change Password</button>
+      <button class="btn-sm danger" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
 
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchUserTab('weather',this)">🌦 Weather Analysis</button>
-    <button class="nav-tab" onclick="switchUserTab('changepass',this)">🔑 Change Password</button>
-    <button class="nav-tab logout" onclick="doLogout()">Sign Out</button>
-  </div>
-
-  <!-- Weather Panel -->
-  <div id="user-panel-weather" class="nav-panel active">
   <div class="config-panel">
-    <div class="config-label">Query Parameters · Joro Ensemble · planette.ai</div>
+    <div class="config-label">Query Parameters</div>
     <div class="config-grid">
       <div class="field"><label>Location (ZIP or City)</label><input type="text" id="location" placeholder="e.g. 10001 or Chicago, IL" value="Boston, MA"></div>
       <div class="field"><label>Start Date</label><input type="date" id="startDate"></div>
       <div class="field"><label>End Date</label><input type="date" id="endDate"></div>
       <div>
         <button class="btn-run" id="runBtn" onclick="runAnalysis()">
-          <div class="sp"></div><span class="bt">▶ Analyze</span>
+          <div class="spinner"></div><span class="btn-text">▶ Analyze</span>
         </button>
       </div>
     </div>
-  </div><!-- /config-panel -->
+    <div class="api-row">
+      <div class="field"><label>Joro API Key</label><input type="password" id="apiKey" placeholder="joro_sk_...  (enterprise credentials)"></div>
+      <div class="field"><label>API Base URL</label><input type="text" id="apiBase" value="https://api.planette.ai/joro/v1"></div>
+    </div>
+  </div>
 
-  <div class="status-bar"><div class="status-dot" id="statusDot"></div><span id="statusText">Ready · Joro Ensemble connected · planette.ai</span></div>
+  <div class="status-bar" id="statusBar">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Enter your Joro API key and query parameters to begin.</span>
+  </div>
   <div class="error-panel" id="errorPanel"></div>
 
   <div class="results" id="results">
@@ -463,17 +415,19 @@ table.data-tbl tbody td { padding:10px 16px; }
       <div class="card temp-high"><div class="card-tag">P95 — High End</div><div class="card-value" id="p95Temp">--°</div><div class="card-sub">95th percentile</div></div>
       <div class="card risk"><div class="card-tag">CI Width</div><div class="card-value" id="ciWidth">--°</div><div class="card-sub">Spread across interval</div></div>
     </div>
+
     <div class="chart-section">
       <div class="chart-header">
         <div class="chart-title">Temperature Distribution Over Period</div>
         <div class="chart-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:rgba(125,211,252,0.5)"></div>P5–P95 band</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(56,189,248,0.4)"></div>P5–P95 band</div>
           <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Median (P50)</div>
           <div class="legend-item"><div class="legend-dot" style="background:var(--warn);opacity:0.7"></div>Inclement risk</div>
         </div>
       </div>
       <canvas id="timeChart" height="260"></canvas>
     </div>
+
     <div class="joint-callout">
       <div class="joint-icon">⚡</div>
       <div class="joint-text">
@@ -485,12 +439,13 @@ table.data-tbl tbody td { padding:10px 16px; }
         <div class="joint-prob-label">Joint probability</div>
       </div>
     </div>
+
     <div class="section-label">Risk Analysis</div>
     <div class="risk-grid">
       <div class="risk-card">
         <div class="risk-title">🌩 Inclement Weather Risk</div>
         <div class="prob-bar-wrap"><div class="prob-bar-label"><span>Heavy Precipitation</span><span id="probPrecip">--%</span></div><div class="prob-bar-track"><div class="prob-bar-fill" id="barPrecip" style="width:0%;background:var(--cold)"></div></div></div>
-        <div class="prob-bar-wrap"><div class="prob-bar-label"><span>Severe Storm</span><span id="probStorm">--%</span></div><div class="prob-bar-track"><div class="prob-bar-fill" id="barStorm" style="width:0%;background:#a78bfa"></div></div></div>
+        <div class="prob-bar-wrap"><div class="prob-bar-label"><span>Severe Storm</span><span id="probStorm">--%</span></div><div class="prob-bar-track"><div class="prob-bar-fill" id="barStorm" style="width:0%;background:#9b59b6"></div></div></div>
         <div class="prob-bar-wrap"><div class="prob-bar-label"><span>High Wind (&gt;40 mph)</span><span id="probWind">--%</span></div><div class="prob-bar-track"><div class="prob-bar-fill" id="barWind" style="width:0%;background:var(--accent)"></div></div></div>
         <div class="prob-bar-wrap"><div class="prob-bar-label"><span>Overall Inclement</span><span id="probInclement">--%</span></div><div class="prob-bar-track"><div class="prob-bar-fill" id="barInclement" style="width:0%;background:var(--warn)"></div></div></div>
       </div>
@@ -498,8 +453,8 @@ table.data-tbl tbody td { padding:10px 16px; }
         <div class="risk-title">🌡 Temperature Extremes</div>
         <div class="gauge-wrap">
           <svg class="gauge-svg" viewBox="0 0 200 130">
-            <defs><linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7dd3fc"/><stop offset="50%" stop-color="#5b9bff"/><stop offset="100%" stop-color="#ff6b35"/></linearGradient></defs>
-            <path d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="16" stroke-linecap="round"/>
+            <defs><linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#38bdf8"/><stop offset="50%" stop-color="#4f72ff"/><stop offset="100%" stop-color="#ff6b35"/></linearGradient></defs>
+            <path d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke="#1e2333" stroke-width="16" stroke-linecap="round"/>
             <path d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke="url(#gaugeGrad)" stroke-width="16" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251" id="gaugeArc" style="transition:stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)"/>
             <line x1="100" y1="110" x2="100" y2="38" stroke="var(--text)" stroke-width="2" stroke-linecap="round" id="gaugeNeedle" style="transform-origin:100px 110px;transform:rotate(-90deg);transition:transform 1.2s cubic-bezier(0.4,0,0.2,1)"/>
             <circle cx="100" cy="110" r="5" fill="var(--text)"/>
@@ -512,6 +467,7 @@ table.data-tbl tbody td { padding:10px 16px; }
         </div>
       </div>
     </div>
+
     <div class="section-label">Daily Breakdown</div>
     <div class="table-section">
       <div class="table-header">
@@ -525,6 +481,7 @@ table.data-tbl tbody td { padding:10px 16px; }
         </table>
       </div>
     </div>
+
     <div class="chart-section">
       <div class="chart-header">
         <div class="chart-title">Aggregate Temperature Probability Distribution</div>
@@ -534,52 +491,46 @@ table.data-tbl tbody td { padding:10px 16px; }
     </div>
     <div class="footnote" id="footnote"></div>
   </div>
-</div><!-- /results -->
-</div><!-- /user-panel-weather -->
 
-  <!-- Change Password Panel -->
-  <div id="user-panel-changepass" class="nav-panel">
-    <div class="section-label">Account Security</div>
-    <div class="panel" style="max-width:480px">
-      <div class="panel-title">🔑 Change Your Password</div>
-      <div class="field" style="margin-bottom:14px"><label>New Password</label><input type="password" id="userNewPass" placeholder="Min 6 characters"></div>
-      <div class="field" style="margin-bottom:20px"><label>Confirm New Password</label><input type="password" id="userNewPassConfirm" placeholder="Repeat new password"></div>
-      <button class="btn-run" id="userPassTabBtn" style="width:auto;padding:12px 32px" onclick="changeUserPasswordInline()">
-        <div class="sp"></div><span class="bt">Update Password</span>
-      </button>
-      <div class="inline-msg" id="userPassTabMsg" style="margin-top:14px"></div>
-    </div>
+</div>
+</div>
+
+<!-- ═══ MODAL: User Change Own Password ════════════════════════════════════════ -->
+<div class="modal-overlay" id="userPassModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('userPassModal')">✕</button>
+    <div class="modal-title">Change Password</div>
+    <div class="modal-sub" id="modalUserLabel">Update your account password</div>
+    <div class="field" style="margin-bottom:14px"><label>New Password</label><input type="password" id="modalNewPass" placeholder="Min 8 characters"></div>
+    <div class="field" style="margin-bottom:20px"><label>Confirm New Password</label><input type="password" id="modalNewPassConfirm" placeholder="Repeat new password"></div>
+    <button class="btn-action accent" style="width:100%" onclick="changeUserOwnPassword()">Update Password</button>
+    <div class="inline-msg" id="modalPassMsg"></div>
   </div>
+</div>
 
-</div><!-- /app-shell -->
-</div><!-- /userPage -->
-
-<!-- ═══ MODAL: Delete confirm ════════════════════════════════════ -->
+<!-- ═══ MODAL: Delete Confirm ══════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="deleteModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
     <div class="modal-title">Delete Account</div>
     <div class="modal-sub">This cannot be undone.</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:24px">Permanently deleting:<br><strong id="deleteTargetEmail" style="color:var(--text)"></strong></p>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:24px">Permanently deleting account for:<br><strong id="deleteTargetEmail" style="color:var(--text)"></strong></p>
     <div style="display:flex;gap:12px">
-      <button class="btn-action danger-btn" id="confirmDeleteBtn" style="flex:1" onclick="confirmDelete()">
-        <div class="sp"></div><span class="bl">Yes, Delete</span>
-      </button>
+      <button class="btn-action danger-btn" style="flex:1" onclick="confirmDelete()">Yes, Delete</button>
       <button class="btn-sm" style="flex:1;padding:11px" onclick="closeModal('deleteModal')">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ MODAL: Inline reset password ════════════════════════════ -->
+<!-- ═══ MODAL: Inline Password Reset (admin list) ══════════════════════════════ -->
 <div class="modal-overlay" id="inlinePassModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('inlinePassModal')">✕</button>
     <div class="modal-title">Reset Password</div>
-    <div class="modal-sub">Send reset email to: <strong id="inlinePassTarget" style="color:var(--text)"></strong></div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.6">A password reset link will be emailed to the user. For instant silent reset, use the Supabase Dashboard directly.</p>
-    <button class="btn-action" id="inlinePassBtn" style="width:100%" onclick="confirmInlineReset()">
-      <div class="sp"></div><span class="bl">Send Reset Email</span>
-    </button>
+    <div class="modal-sub">Account: <strong id="inlinePassTarget" style="color:var(--text)"></strong></div>
+    <div class="field" style="margin-bottom:14px"><label>New Password</label><input type="password" id="inlineNewPass" placeholder="New password"></div>
+    <div class="field" style="margin-bottom:20px"><label>Confirm Password</label><input type="password" id="inlineNewPassConfirm" placeholder="Repeat password"></div>
+    <button class="btn-action" style="width:100%" onclick="confirmInlineReset()">Set Password</button>
     <div class="inline-msg" id="inlinePassMsg"></div>
   </div>
 </div>
@@ -587,28 +538,29 @@ table.data-tbl tbody td { padding:10px 16px; }
 <script>
 /* ════════════════════════════════════════════════════════════════
    SUPABASE CONFIG
+   Replace YOUR_SUPABASE_URL and YOUR_SUPABASE_ANON_KEY below.
+   The anon key is safe to expose — RLS policies protect your data.
 ════════════════════════════════════════════════════════════════ */
-const SUPABASE_URL  = 'https://vemgnyqftpzgwzqujvbb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlbWdueXFmdHB6Z3d6cXVqdmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3MzQ0OTksImV4cCI6MjA4ODMxMDQ5OX0.yMLVsL4CvVbDpHr-gcyCn-yOj16ob1Q8CTLdctFhmng';
-const ADMIN_EMAIL   = 'donsyahalom@gmail.com';
+const SUPABASE_URL  = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
+const ADMIN_EMAIL   = 'admin@yoursite.com'; // protected from deletion
 
-/* ── GLOBALS ──────────────────────────────────────────────────── */
+/* ── GLOBALS ── */
 let SB = null;
 let SESSION = { user: null, role: null };
+let allProfiles = [];
 let deleteTarget = null;
 let inlinePassTarget = null;
 let timeChartInst = null;
 let distChartInst = null;
-let allProfiles = [];  // cached for reset select
 
 /* ════════════════════════════════════════════════════════════════
-   BOOT
+   BOOT — load Supabase SDK, restore existing session
 ════════════════════════════════════════════════════════════════ */
 async function boot() {
   await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js');
   SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-  // Restore existing session
   const { data: { session } } = await SB.auth.getSession();
   if (session) {
     await handleSession(session);
@@ -616,31 +568,27 @@ async function boot() {
     showPage('loginPage');
   }
 
-  // React to auth state changes
   SB.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session) await handleSession(session);
-    else if (event === 'SIGNED_OUT') { SESSION = { user:null, role:null }; showPage('loginPage'); }
+    if (event === 'SIGNED_IN'  && session) await handleSession(session);
+    if (event === 'SIGNED_OUT') { SESSION = { user:null, role:null }; showPage('loginPage'); }
   });
 }
 
 async function handleSession(session) {
   SESSION.user = session.user;
-  const { data: profile } = await SB
+  const { data: profile, error } = await SB
     .from('profiles').select('role').eq('id', session.user.id).single();
-
-  if (!profile) { await SB.auth.signOut(); return; }
+  if (error || !profile) { await SB.auth.signOut(); return; }
   SESSION.role = profile.role;
-
   if (profile.role === 'admin') {
     document.getElementById('adminEmailDisplay').textContent = session.user.email;
     showPage('adminPage');
     await refreshAdminUI();
   } else {
     document.getElementById('userEmailDisplay').textContent = session.user.email;
+    document.getElementById('modalUserLabel').textContent   = 'Updating password for ' + session.user.email;
     showPage('userPage');
     initDateDefaults();
-    // Auto-run with mock data on login
-    await runAnalysis();
   }
 }
 
@@ -652,14 +600,11 @@ async function doLogin() {
   const pass  = document.getElementById('loginPassword').value;
   const errEl = document.getElementById('loginError');
   const btn   = document.getElementById('loginBtn');
-
   errEl.style.display = 'none';
   if (!email || !pass) { errEl.textContent = 'Email and password are required.'; errEl.style.display = 'block'; return; }
-
-  setLoading(btn, true);
+  btn.disabled = true; btn.classList.add('loading');
   const { error } = await SB.auth.signInWithPassword({ email, password: pass });
-  setLoading(btn, false);
-
+  btn.disabled = false; btn.classList.remove('loading');
   if (error) {
     errEl.textContent = error.message.includes('Invalid') ? 'Invalid email or password.' : error.message;
     errEl.style.display = 'block';
@@ -668,38 +613,69 @@ async function doLogin() {
 
 async function doLogout() {
   await SB.auth.signOut();
-  document.getElementById('results').classList.remove('visible');
+  const r = document.getElementById('results');
+  if (r) r.classList.remove('visible');
 }
 
-/* ════════════════════════════════════════════════════════════════
-   ADMIN: LOAD DATA
-════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  ['loginEmail','loginPassword'].forEach(id =>
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); })
+  );
+  document.querySelectorAll('.modal-overlay').forEach(el =>
+    el.addEventListener('click', e => { if (e.target===el) el.classList.remove('open'); })
+  );
+  initDateDefaults();
+  boot();
+});
+
+/* ── ROUTING ── */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function loadScript(src) {
+  return new Promise((res,rej) => {
+    if (document.querySelector(`script[src="${src}"]`)) return res();
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+/* ── ADMIN TABS ─────────────────────────────────────────────────────────────── */
+function switchAdminTab(name, btn) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if (name === 'password') refreshResetSelect();
+}
+
+/* ── ADMIN UI REFRESH ── */
 async function refreshAdminUI() {
   const { data, error } = await SB
-    .from('profiles').select('id,email,role,created_at').order('created_at', { ascending: false });
-
+    .from('profiles').select('id,email,role,created_at').order('created_at',{ascending:false});
   if (error) { console.error(error); return; }
   allProfiles = data || [];
-
   const users  = allProfiles.filter(p => p.role === 'user');
   const admins = allProfiles.filter(p => p.role === 'admin');
-
-  document.getElementById('statTotal').textContent  = allProfiles.length;
-  document.getElementById('statUsers').textContent  = users.length;
-  document.getElementById('statAdmins').textContent = admins.length;
-
   const fmtDate = d => d ? d.split('T')[0] : '–';
-  const rowsDash = allProfiles.map(p => `
+
+  document.getElementById('statCards').innerHTML = `
+    <div class="stat-card"><div class="stat-card-tag">Total Accounts</div><div class="stat-card-val">${allProfiles.length}</div><div class="stat-card-sub">All roles combined</div></div>
+    <div class="stat-card"><div class="stat-card-tag">User Accounts</div><div class="stat-card-val">${users.length}</div><div class="stat-card-sub">Active user seats</div></div>
+    <div class="stat-card"><div class="stat-card-tag">Admin Accounts</div><div class="stat-card-val">${admins.length}</div><div class="stat-card-sub">Full system access</div></div>`;
+
+  document.getElementById('dashTable').innerHTML = allProfiles.map(p => `
     <tr>
       <td>${esc(p.email)}</td>
       <td><span class="pill pill-${p.role}">${p.role}</span></td>
       <td style="color:var(--text2)">${fmtDate(p.created_at)}</td>
       <td><span class="badge-risk badge-low">Active</span></td>
-    </tr>`).join('');
-  document.getElementById('dashTable').innerHTML = rowsDash ||
-    '<tr><td colspan="4" style="color:var(--text3);padding:20px;text-align:center">No accounts yet.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="4" style="color:var(--text3);padding:20px;text-align:center">No accounts yet.</td></tr>';
 
-  const rowsAcct = allProfiles.map(p => `
+  document.getElementById('accountsTable').innerHTML = allProfiles.map(p => `
     <tr>
       <td>${esc(p.email)}</td>
       <td><span class="pill pill-${p.role}">${p.role}</span></td>
@@ -710,56 +686,40 @@ async function refreshAdminUI() {
           ? `<button class="tbl-btn del" onclick="openDeleteModal('${esc(p.id)}','${esc(p.email)}')">Delete</button>`
           : `<span style="font-size:11px;color:var(--text3);padding:4px 6px">Protected</span>`}
       </td>
-    </tr>`).join('');
-  document.getElementById('accountsTable').innerHTML = rowsAcct ||
-    '<tr><td colspan="4" style="color:var(--text3);padding:20px;text-align:center">No accounts yet.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="4" style="color:var(--text3);padding:20px;text-align:center">No accounts yet.</td></tr>';
 
-  // Populate reset select
   const sel = document.getElementById('resetUserSelect');
-  if (sel) {
-    sel.innerHTML = '<option value="">— choose account —</option>' +
-      allProfiles.map(p => `<option value="${esc(p.email)}">${esc(p.email)} (${p.role})</option>`).join('');
-  }
+  if (sel) sel.innerHTML = '<option value="">— choose account —</option>' +
+    allProfiles.map(p => `<option value="${esc(p.email)}">${esc(p.email)} (${p.role})</option>`).join('');
 }
 
-/* ════════════════════════════════════════════════════════════════
-   ADMIN: CREATE ACCOUNT
-   Uses signUp with emailRedirectTo suppressed.
-   Relies on "Disable email confirmation" being OFF in Supabase
-   Auth settings — see README.
-════════════════════════════════════════════════════════════════ */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ── ACCOUNT CRUD ── */
 async function createAccount() {
   const email   = document.getElementById('newEmail').value.trim().toLowerCase();
   const role    = document.getElementById('newRole').value;
   const pass    = document.getElementById('newPass').value;
   const confirm = document.getElementById('newPassConfirm').value;
   const msg     = document.getElementById('createMsg');
-  const btn     = document.getElementById('createBtn');
 
-  if (!email || !pass)   return showMsg(msg,'error','Email and password are required.');
+  if (!email || !pass)       return showMsg(msg,'error','Email and password are required.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showMsg(msg,'error','Enter a valid email address.');
-  if (pass.length < 6)   return showMsg(msg,'error','Password must be at least 6 characters.');
-  if (pass !== confirm)  return showMsg(msg,'error','Passwords do not match.');
+  if (pass.length < 8)       return showMsg(msg,'error','Password must be at least 8 characters.');
+  if (pass !== confirm)      return showMsg(msg,'error','Passwords do not match.');
 
-  setLoading(btn, true);
   const { data, error } = await SB.auth.signUp({ email, password: pass });
-  if (error) { setLoading(btn,false); return showMsg(msg,'error',error.message); }
+  if (error) return showMsg(msg,'error', error.message);
+  if (data.user) await SB.from('profiles').upsert({ id: data.user.id, email, role });
 
-  // Update role if admin
-  if (data.user && role === 'admin') {
-    await SB.from('profiles').upsert({ id: data.user.id, email, role: 'admin' });
-  }
-
-  setLoading(btn, false);
-  ['newEmail','newPass','newPassConfirm'].forEach(id => { document.getElementById(id).value = ''; });
+  ['newEmail','newPass','newPassConfirm'].forEach(id => { document.getElementById(id).value=''; });
   document.getElementById('newRole').value = 'user';
-  showMsg(msg,'success',`✓ Account created for ${email} (${role}). They can log in immediately.`);
+  showMsg(msg,'success',`✓ Account created: ${email} (${role})`);
   await refreshAdminUI();
 }
 
-/* ════════════════════════════════════════════════════════════════
-   ADMIN: DELETE ACCOUNT
-════════════════════════════════════════════════════════════════ */
 function openDeleteModal(userId, email) {
   deleteTarget = { userId, email };
   document.getElementById('deleteTargetEmail').textContent = email;
@@ -768,21 +728,36 @@ function openDeleteModal(userId, email) {
 
 async function confirmDelete() {
   if (!deleteTarget) return;
-  const btn = document.getElementById('confirmDeleteBtn');
-  setLoading(btn, true);
   const { error } = await SB.from('profiles').delete().eq('id', deleteTarget.userId);
-  setLoading(btn, false);
   if (error) { alert('Delete failed: ' + error.message); return; }
   deleteTarget = null;
   closeModal('deleteModal');
   await refreshAdminUI();
 }
 
-/* ════════════════════════════════════════════════════════════════
-   ADMIN: RESET USER PASSWORD
-   Sends a password reset email (client-side SDK limitation).
-   For silent reset, use Supabase Dashboard or a server function.
-════════════════════════════════════════════════════════════════ */
+/* ── PASSWORD MANAGEMENT ── */
+async function changeOwnPassword() {
+  const newPass = document.getElementById('selfNewPass').value;
+  const confirm = document.getElementById('selfNewPassConfirm').value;
+  const msg     = document.getElementById('selfPassMsg');
+  if (newPass.length < 8)  return showMsg(msg,'error','Password must be at least 8 characters.');
+  if (newPass !== confirm) return showMsg(msg,'error','Passwords do not match.');
+  const { error } = await SB.auth.updateUser({ password: newPass });
+  if (error) return showMsg(msg,'error',error.message);
+  document.getElementById('selfNewPass').value = '';
+  document.getElementById('selfNewPassConfirm').value = '';
+  showMsg(msg,'success','✓ Admin password updated.');
+}
+
+async function resetUserPassword() {
+  const email = document.getElementById('resetUserSelect').value;
+  const msg   = document.getElementById('resetPassMsg');
+  if (!email) return showMsg(msg,'error','Please select an account.');
+  const { error } = await SB.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+  if (error) return showMsg(msg,'error',error.message);
+  showMsg(msg,'success',`Password reset email sent to ${email}.`);
+}
+
 function openInlinePassModal(email) {
   inlinePassTarget = email;
   document.getElementById('inlinePassTarget').textContent = email;
@@ -791,162 +766,44 @@ function openInlinePassModal(email) {
 }
 
 async function confirmInlineReset() {
-  const btn = document.getElementById('inlinePassBtn');
-  setLoading(btn, true);
-  const { error } = await SB.auth.resetPasswordForEmail(inlinePassTarget, {
-    redirectTo: window.location.origin
-  });
-  setLoading(btn, false);
-  if (error) return showMsg(document.getElementById('inlinePassMsg'), 'error', error.message);
-  showMsg(document.getElementById('inlinePassMsg'), 'success', `Reset email sent to ${inlinePassTarget}.`);
-  setTimeout(() => closeModal('inlinePassModal'), 2000);
+  const msg = document.getElementById('inlinePassMsg');
+  const { error } = await SB.auth.resetPasswordForEmail(inlinePassTarget, { redirectTo: window.location.origin });
+  if (error) return showMsg(msg,'error',error.message);
+  showMsg(msg,'success',`Reset email sent to ${inlinePassTarget}.`);
+  setTimeout(() => closeModal('inlinePassModal'), 1500);
 }
 
-async function resetUserPassword() {
-  const email = document.getElementById('resetUserSelect').value;
-  const msg   = document.getElementById('resetPassMsg');
-  const btn   = document.getElementById('resetPassBtn');
-  if (!email) return showMsg(msg, 'error', 'Please select an account.');
-  setLoading(btn, true);
-  const { error } = await SB.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
-  setLoading(btn, false);
-  if (error) return showMsg(msg, 'error', error.message);
-  showMsg(msg, 'success', `Password reset email sent to ${email}.`);
-}
-
-/* ════════════════════════════════════════════════════════════════
-   ADMIN: CHANGE OWN PASSWORD
-════════════════════════════════════════════════════════════════ */
-async function changeOwnPassword() {
-  const newPass = document.getElementById('selfNewPass').value;
-  const confirm = document.getElementById('selfNewPassConfirm').value;
-  const msg     = document.getElementById('selfPassMsg');
-  const btn     = document.getElementById('selfPassBtn');
-
-  if (newPass.length < 6)  return showMsg(msg, 'error', 'Password must be at least 6 characters.');
-  if (newPass !== confirm) return showMsg(msg, 'error', 'Passwords do not match.');
-
-  setLoading(btn, true);
-  const { error } = await SB.auth.updateUser({ password: newPass });
-  setLoading(btn, false);
-  if (error) return showMsg(msg, 'error', error.message);
-  ['selfNewPass','selfNewPassConfirm'].forEach(id => { document.getElementById(id).value = ''; });
-  showMsg(msg, 'success', '✓ Admin password updated successfully.');
-}
-
-/* ════════════════════════════════════════════════════════════════
-   USER: CHANGE OWN PASSWORD
-════════════════════════════════════════════════════════════════ */
 async function changeUserOwnPassword() {
   const newPass = document.getElementById('modalNewPass').value;
   const confirm = document.getElementById('modalNewPassConfirm').value;
   const msg     = document.getElementById('modalPassMsg');
-  const btn     = document.getElementById('userPassBtn');
-
-  if (newPass.length < 6)  return showMsg(msg, 'error', 'New password must be at least 6 characters.');
-  if (newPass !== confirm) return showMsg(msg, 'error', 'Passwords do not match.');
-
-  setLoading(btn, true);
+  if (newPass.length < 8)  return showMsg(msg,'error','Password must be at least 8 characters.');
+  if (newPass !== confirm) return showMsg(msg,'error','Passwords do not match.');
   const { error } = await SB.auth.updateUser({ password: newPass });
-  setLoading(btn, false);
-  if (error) return showMsg(msg, 'error', error.message);
-  showMsg(msg, 'success', '✓ Password updated successfully.');
-  setTimeout(() => closeModal('userPassModal'), 1500);
+  if (error) return showMsg(msg,'error',error.message);
+  showMsg(msg,'success','✓ Password updated.');
+  setTimeout(() => closeModal('userPassModal'), 1400);
 }
 
-async function changeUserPasswordInline() {
-  const newPass = document.getElementById('userNewPass').value;
-  const confirm = document.getElementById('userNewPassConfirm').value;
-  const msg     = document.getElementById('userPassTabMsg');
-  const btn     = document.getElementById('userPassTabBtn');
-
-  if (newPass.length < 6)  return showMsg(msg, 'error', 'Password must be at least 6 characters.');
-  if (newPass !== confirm) return showMsg(msg, 'error', 'Passwords do not match.');
-
-  setLoading(btn, true);
-  const { error } = await SB.auth.updateUser({ password: newPass });
-  setLoading(btn, false);
-  if (error) return showMsg(msg, 'error', error.message);
-  document.getElementById('userNewPass').value = '';
-  document.getElementById('userNewPassConfirm').value = '';
-  showMsg(msg, 'success', '✓ Password updated successfully.');
-}
-
-/* ════════════════════════════════════════════════════════════════
-   HELPERS
-════════════════════════════════════════════════════════════════ */
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-function switchAdminTab(name, btn) {
-  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
-}
-
-function switchUserTab(name, btn) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.nav-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('user-panel-'+name).classList.add('active');
-}
-
+/* ── MODAL HELPERS ──────────────────────────────────────────────────────────── */
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function setLoading(btn, on) {
-  btn.disabled = on;
-  btn.classList.toggle('loading', on);
-}
 
 function showMsg(el, type, text) {
   el.className = 'inline-msg ' + type;
   el.textContent = text;
   el.style.display = 'block';
-  setTimeout(() => { el.style.display = 'none'; }, 5000);
+  setTimeout(() => { el.style.display = 'none'; }, 4500);
 }
 
-function esc(s) {
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
-    .replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function loadScript(src) {
-  return new Promise((res, rej) => {
-    if (document.querySelector(`script[src="${src}"]`)) return res();
-    const s = document.createElement('script');
-    s.src = src; s.onload = res; s.onerror = rej;
-    document.head.appendChild(s);
-  });
-}
-
-/* ════════════════════════════════════════════════════════════════
-   DOM READY
-════════════════════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
-  ['loginEmail','loginPassword'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
-  });
-  document.querySelectorAll('.modal-overlay').forEach(el =>
-    el.addEventListener('click', e => { if (e.target===el) el.classList.remove('open'); })
-  );
-  initDateDefaults();
-  boot();
-});
-
-/* ════════════════════════════════════════════════════════════════
-   WEATHER ANALYSIS TOOL
-════════════════════════════════════════════════════════════════ */
+/* ── WEATHER TOOL ───────────────────────────────────────────────────────────── */
 function initDateDefaults() {
-  const today = new Date(), fmt = d => d.toISOString().split('T')[0];
+  const today = new Date();
+  const fmt = d => d.toISOString().split('T')[0];
   const s = new Date(today); s.setDate(today.getDate()+7);
   const e = new Date(today); e.setDate(today.getDate()+37);
-  const sd = document.getElementById('startDate'), ed = document.getElementById('endDate');
+  const sd = document.getElementById('startDate');
+  const ed = document.getElementById('endDate');
   if (sd) sd.value = fmt(s);
   if (ed) ed.value = fmt(e);
 }
@@ -962,11 +819,13 @@ function loadChartJS() {
 }
 
 function setStatus(msg, state='idle') {
-  document.getElementById('statusDot').className = 'status-dot'+(state==='active'?' active':state==='error'?' error':'');
-  document.getElementById('statusText').textContent = msg;
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = 'status-dot' + (state==='active'?' active':state==='error'?' error':'');
+  txt.textContent = msg;
 }
-function showError(msg) { const el=document.getElementById('errorPanel'); el.textContent=msg; el.style.display='block'; }
-function clearError()   { document.getElementById('errorPanel').style.display='none'; }
+function showError(msg) { const el = document.getElementById('errorPanel'); el.textContent = msg; el.style.display = 'block'; }
+function clearError()   { document.getElementById('errorPanel').style.display = 'none'; }
 
 async function runAnalysis() {
   clearError();
@@ -974,111 +833,76 @@ async function runAnalysis() {
   const location  = document.getElementById('location').value.trim();
   const startDate = document.getElementById('startDate').value;
   const endDate   = document.getElementById('endDate').value;
+  const apiKey    = document.getElementById('apiKey').value.trim();
+  const apiBase   = document.getElementById('apiBase').value.trim();
 
-  if (!location)   { showError('Please enter a location.'); return; }
-  if (!startDate||!endDate) { showError('Please select both dates.'); return; }
-  if (new Date(endDate)<=new Date(startDate)) { showError('End date must be after start date.'); return; }
-  const nDays = Math.round((new Date(endDate)-new Date(startDate))/86400000)+1;
-  if (nDays>180) { showError('Date range exceeds 180-day maximum.'); return; }
+  if (!location) { showError('Please enter a location.'); return; }
+  if (!startDate || !endDate) { showError('Please select both dates.'); return; }
+  if (new Date(endDate) <= new Date(startDate)) { showError('End date must be after start date.'); return; }
+  const days = Math.round((new Date(endDate)-new Date(startDate))/86400000)+1;
+  if (days > 180) { showError('Date range exceeds 180-day maximum.'); return; }
 
   const btn = document.getElementById('runBtn');
-  setLoading(btn, true);
-  setStatus('Connecting to Joro API (planette.ai)…','active');
+  btn.disabled = true; btn.classList.add('loading');
+  setStatus('Querying Joro API…', 'active');
   await loadChartJS();
 
-  // ── Mock Joro API: simulates geocode + probabilistic forecast ──
-  setStatus(`Geocoding "${location}"…`, 'active');
-  await new Promise(r => setTimeout(r, 400));
-  const mockGeo = { display_name: location, lat: 42.36, lon: -71.06 };
-
-  setStatus(`Fetching Joro ensemble forecast for ${mockGeo.display_name}…`, 'active');
-  await new Promise(r => setTimeout(r, 700));
-  const mockJoroResponse = buildMockJoroResponse(mockGeo.lat, mockGeo.lon, startDate, endDate);
-
-  setStatus(`Processing ensemble data…`, 'active');
-  await new Promise(r => setTimeout(r, 300));
-  const data = transformJoro(mockJoroResponse, mockGeo.display_name);
-
-  setStatus(`Complete · ${data.days.length} days · ${data.location} · Joro Ensemble (mock)`,'active');
-  renderAll(data);
-  setLoading(btn, false);
-}
-
-/* ── Mock Joro API response builder ──────────────────────────── */
-function buildMockJoroResponse(lat, lon, startDate, endDate) {
-  const month = new Date(startDate).getMonth();
-  const baseTemp = [32,35,44,54,64,72,78,76,68,56,45,35][month];
-  const tempVar  = [12,12,12,12,10,9,8,8,9,10,11,12][month];
-
-  const dates = [], t2m = { p5:[], p10:[], p25:[], p50:[], p75:[], p90:[], p95:[] };
-  const precip = { p50:[], prob_gt_0_1:[] };
-  const wind   = { p50:[], p75:[] };
-  const cape   = { p75:[] };
-
-  let cur = new Date(startDate + 'T12:00:00Z');
-  const end = new Date(endDate + 'T12:00:00Z');
-  let bt = baseTemp + (Math.random()-0.5)*8;
-  let wt = 0.3 + Math.random()*0.4;
-
-  while (cur <= end) {
-    bt += (Math.random()-0.5)*4; bt = bt*0.85 + baseTemp*0.15;
-    wt += (Math.random()-0.5)*0.15; wt = Math.max(0.05, Math.min(0.95, wt));
-
-    const spread = tempVar * (0.7 + Math.random()*0.5);
-    dates.push(cur.toISOString().split('T')[0]);
-    t2m.p5.push(Math.round(bt - spread*1.5));
-    t2m.p10.push(Math.round(bt - spread*1.1));
-    t2m.p25.push(Math.round(bt - spread*0.6));
-    t2m.p50.push(Math.round(bt));
-    t2m.p75.push(Math.round(bt + spread*0.6));
-    t2m.p90.push(Math.round(bt + spread*1.1));
-    t2m.p95.push(Math.round(bt + spread*1.5));
-
-    const pp = Math.min(0.95, Math.max(0.02, wt*0.6 + Math.random()*0.3));
-    precip.p50.push(parseFloat((pp * 0.8).toFixed(2)));
-    precip.prob_gt_0_1.push(parseFloat(pp.toFixed(3)));
-
-    const ws = 5 + Math.random()*30;
-    wind.p50.push(parseFloat(ws.toFixed(1)));
-    wind.p75.push(parseFloat((ws * 1.3).toFixed(1)));
-
-    const capeVal = pp > 0.5 ? Math.random()*2000 : Math.random()*500;
-    cape.p75.push(Math.round(capeVal));
-
-    cur.setDate(cur.getDate()+1);
+  let data;
+  if (apiKey) {
+    try {
+      const geoRes = await fetch(`${apiBase}/geocode?q=${encodeURIComponent(location)}`, { headers:{'Authorization':'Bearer '+apiKey} });
+      if (!geoRes.ok) throw new Error(`Geocode ${geoRes.status}`);
+      const geo = await geoRes.json();
+      setStatus(`Fetching forecast for ${geo.display_name}…`, 'active');
+      const fcRes = await fetch(`${apiBase}/forecast/probabilistic`, {
+        method:'POST', headers:{'Authorization':'Bearer '+apiKey,'Content-Type':'application/json'},
+        body: JSON.stringify({ lat:geo.lat, lon:geo.lon, start_date:startDate, end_date:endDate,
+          variables:['temperature_2m','precipitation','wind_speed_10m','convective_available_potential_energy'],
+          percentiles:[5,10,25,50,75,90,95], units:{temperature:'fahrenheit',precipitation:'inches',wind_speed:'mph'} })
+      });
+      if (!fcRes.ok) throw new Error(`Forecast ${fcRes.status}`);
+      data = transformJoro(await fcRes.json(), geo.display_name);
+    } catch(err) {
+      btn.disabled = false; btn.classList.remove('loading');
+      setStatus('API error.','error');
+      showError('Joro API Error: '+err.message+'\n\nVerify credentials or contact info@planette.ai.');
+      return;
+    }
+  } else {
+    setStatus('Demo mode — simulated Joro ensemble…', 'active');
+    await new Promise(r => setTimeout(r,900));
+    data = simulate(location, startDate, endDate);
   }
 
-  return {
-    meta: { model:'joro-ensemble-v2', provider:'planette.ai', generated_at: new Date().toISOString() },
-    location: { lat, lon },
-    daily: { dates, temperature_2m: t2m, precipitation: precip, wind_speed_10m: wind,
-             convective_available_potential_energy: cape }
-  };
+  setStatus(`Complete · ${data.days.length} days · ${data.location}`, 'active');
+  renderAll(data);
+  btn.disabled = false; btn.classList.remove('loading');
 }
 
-function transformJoro(raw,loc) {
-  const days=raw.daily.dates.map((date,i)=>{
-    const p5=raw.daily.temperature_2m.p5[i],p50=raw.daily.temperature_2m.p50[i],p95=raw.daily.temperature_2m.p95[i];
-    const precip=raw.daily.precipitation.p50[i],wind=raw.daily.wind_speed_10m.p75[i],cape=raw.daily.convective_available_potential_energy?.p75?.[i]??0;
+function transformJoro(raw, loc) {
+  const days = raw.daily.dates.map((date,i) => {
+    const p5=raw.daily.temperature_2m.p5[i], p50=raw.daily.temperature_2m.p50[i], p95=raw.daily.temperature_2m.p95[i];
+    const precip=raw.daily.precipitation.p50[i], wind=raw.daily.wind_speed_10m.p75[i], cape=raw.daily.convective_available_potential_energy?.p75?.[i]??0;
     const precipProb=raw.daily.precipitation.prob_gt_0_1?.[i]??Math.min(1,precip/2);
-    const stormRisk=Math.min(1,cape/2500*0.8+precipProb*0.2),windRisk=Math.min(1,wind/40);
+    const stormRisk=Math.min(1,cape/2500*0.8+precipProb*0.2), windRisk=Math.min(1,wind/40);
     const inclement=Math.min(1,precipProb*0.5+stormRisk*0.3+windRisk*0.2);
-    return{date,p5,p50,p95,precipProb,stormRisk,windRisk,inclement};
+    return {date,p5,p50,p95,precipProb,stormRisk,windRisk,inclement};
   });
-  return analytics(days,loc);
+  return analytics(days, loc);
 }
 
-function simulate(loc,startDate,endDate) {
+function simulate(loc, startDate, endDate) {
   const month=new Date(startDate).getMonth();
   const base=[32,35,44,54,64,72,78,76,68,56,45,35][month];
-  const vari=[12,12,12,12,10,9,8,8,9,10,11,12][month];
-  const days=[];let cur=new Date(startDate),end=new Date(endDate);
-  let bt=base+(Math.random()-0.5)*10,wt=Math.random();
+  const vari=[12,12,12,12,10, 9, 8, 8, 9,10,11,12][month];
+  const days=[];
+  let cur=new Date(startDate), end=new Date(endDate);
+  let bt=base+(Math.random()-0.5)*10, wt=Math.random();
   while(cur<=end){
-    bt+=(Math.random()-0.5)*4;bt=bt*0.85+base*0.15;
-    wt+=(Math.random()-0.5)*0.2;wt=Math.max(0,Math.min(1,wt));
+    bt+=((Math.random()-0.5)*4); bt=bt*0.85+base*0.15;
+    wt+=((Math.random()-0.5)*0.2); wt=Math.max(0,Math.min(1,wt));
     const u=vari*(0.7+Math.random()*0.5);
-    const p5=Math.round(bt-u*1.3),p50=Math.round(bt),p95=Math.round(bt+u*1.3);
+    const p5=Math.round(bt-u*1.3), p50=Math.round(bt), p95=Math.round(bt+u*1.3);
     const precipProb=Math.min(0.95,Math.max(0.02,wt*0.6+Math.random()*0.3));
     const stormRisk=Math.min(0.9,precipProb*(0.3+Math.random()*0.5));
     const windRisk=Math.min(0.85,0.1+Math.random()*0.5);
@@ -1086,64 +910,79 @@ function simulate(loc,startDate,endDate) {
     days.push({date:cur.toISOString().split('T')[0],p5,p50,p95,precipProb,stormRisk,windRisk,inclement});
     cur.setDate(cur.getDate()+1);
   }
-  return analytics(days,loc);
+  return analytics(days, loc);
 }
 
-function analytics(days,loc) {
-  const avg=arr=>arr.reduce((a,b)=>a+b,0)/arr.length;
-  const avgP5=Math.round(avg(days.map(d=>d.p5))),avgP50=Math.round(avg(days.map(d=>d.p50))),avgP95=Math.round(avg(days.map(d=>d.p95)));
-  const avgInclement=avg(days.map(d=>d.inclement)),avgPrecip=avg(days.map(d=>d.precipProb)),avgStorm=avg(days.map(d=>d.stormRisk)),avgWind=avg(days.map(d=>d.windRisk));
+function analytics(days, loc) {
+  const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+  const avgP5=Math.round(avg(days.map(d=>d.p5))), avgP50=Math.round(avg(days.map(d=>d.p50))), avgP95=Math.round(avg(days.map(d=>d.p95)));
+  const avgInclement=avg(days.map(d=>d.inclement)), avgPrecip=avg(days.map(d=>d.precipProb)), avgStorm=avg(days.map(d=>d.stormRisk)), avgWind=avg(days.map(d=>d.windRisk));
   const extremeTempRisk=Math.min(0.95,1-Math.pow(0.9,days.length));
   const pJoint=1-days.reduce((acc,d)=>acc*(1-d.inclement*0.10),1);
-  const sigma=(avgP95-avgP5)/(2*1.645),distPts=[];
-  for(let t=avgP50-sigma*4;t<=avgP50+sigma*4;t+=0.5)
+  const sigma=(avgP95-avgP5)/(2*1.645);
+  const distPts=[];
+  for(let t=avgP50-sigma*4;t<=avgP50+sigma*4;t+=0.5){
     distPts.push({x:Math.round(t*10)/10,y:Math.exp(-0.5*Math.pow((t-avgP50)/sigma,2))/(sigma*Math.sqrt(2*Math.PI))});
-  return{location:loc,days,avgP5,avgP50,avgP95,ciWidth:avgP95-avgP5,avgInclement,avgPrecip,avgStorm,avgWind,extremeTempRisk,pJoint,distPts,p5:avgP5,p95:avgP95};
+  }
+  return {location:loc,days,avgP5,avgP50,avgP95,ciWidth:avgP95-avgP5,avgInclement,avgPrecip,avgStorm,avgWind,extremeTempRisk,pJoint,distPts,p5:avgP5,p95:avgP95};
 }
 
 function renderAll(data) {
-  document.getElementById('p5Temp').textContent=data.avgP5+'°F';
-  document.getElementById('p50Temp').textContent=data.avgP50+'°F';
-  document.getElementById('p95Temp').textContent=data.avgP95+'°F';
-  document.getElementById('ciWidth').textContent=data.ciWidth+'°F';
+  document.getElementById('p5Temp').textContent  = data.avgP5+'°F';
+  document.getElementById('p50Temp').textContent = data.avgP50+'°F';
+  document.getElementById('p95Temp').textContent = data.avgP95+'°F';
+  document.getElementById('ciWidth').textContent = data.ciWidth+'°F';
+
   setBar('barPrecip','probPrecip',data.avgPrecip);
   setBar('barStorm','probStorm',data.avgStorm);
   setBar('barWind','probWind',data.avgWind);
   setBar('barInclement','probInclement',data.avgInclement);
   renderGauge(data.extremeTempRisk);
+
   const jp=Math.round(data.pJoint*100);
-  document.getElementById('jointProb').textContent=jp+'%';
-  document.getElementById('jointDesc').textContent=
-    `Over this ${data.days.length}-day period, there is a ${jp}% chance of at least one day with both a temperature event outside the 90% CI and inclement weather simultaneously. `+
-    `P(joint≥1) = 1 − ∏(1 − P(inclement_i) × 0.10).`;
+  document.getElementById('jointProb').textContent = jp+'%';
+  document.getElementById('jointDesc').textContent =
+    `Over this ${data.days.length}-day period, there is a ${jp}% chance that at least one day sees both a temperature event outside the 90% CI AND inclement weather simultaneously. ` +
+    `Computed as P(joint ≥ 1) = 1 − ∏(1 − P(inclement_i) × 0.10).`;
+
   renderTable(data.days);
   renderTimeChart(data);
   renderDistChart(data);
-  document.getElementById('footnote').innerHTML=
-    `<strong style="color:var(--text2)">Methodology:</strong> Temperature CI from Joro ensemble P5/P95 (z=±1.645σ). `+
-    `Inclement = composite of precipitation, storm (CAPE), and wind (&gt;40 mph). `+
-    `Joint probability: P(joint≥1) = 1−∏ᵢ(1−P(incl_i)×0.10). `+
-    `<br><strong style="color:var(--accent2)">Data source:</strong> Joro Ensemble v2 · <a href="https://www.planette.ai" target="_blank">planette.ai</a> · Mock forecast for demonstration.`;
+
+  document.getElementById('footnote').innerHTML =
+    `<strong style="color:var(--text2)">Methodology:</strong> Temperature CI from Joro ensemble P5/P95 (z=±1.645σ). ` +
+    `Inclement = composite of precipitation, convective storm (CAPE), and high wind (&gt;40 mph). ` +
+    `Joint probability uses daily independence: P(joint≥1) = 1−∏ᵢ(1−P(incl_i)×0.10). ` +
+    (!document.getElementById('apiKey').value
+      ? `<br><strong style="color:var(--warn)">Demo mode:</strong> Simulated data shown. ` +
+        `Contact <a href="https://www.planette.ai" target="_blank">planette.ai</a> for enterprise Joro API access.`
+      : '');
+
   document.getElementById('results').classList.add('visible');
 }
 
-function setBar(bId,pId,val){const p=Math.round(val*100);document.getElementById(pId).textContent=p+'%';setTimeout(()=>{document.getElementById(bId).style.width=p+'%';},50);}
+function setBar(barId,probId,val){
+  const pct=Math.round(val*100);
+  document.getElementById(probId).textContent=pct+'%';
+  setTimeout(()=>{document.getElementById(barId).style.width=pct+'%';},50);
+}
 
 function renderGauge(risk){
+  const pct=Math.round(risk*100);
   document.getElementById('gaugeArc').style.strokeDashoffset=251*(1-risk);
   document.getElementById('gaugeNeedle').style.transform=`rotate(${-90+risk*180}deg)`;
-  document.getElementById('gaugeVal').textContent=Math.round(risk*100)+'%';
+  document.getElementById('gaugeVal').textContent=pct+'%';
   document.getElementById('gaugeDesc').textContent=risk<0.25?'Low extreme temp risk':risk<0.5?'Moderate extreme temp risk':risk<0.75?'Elevated extreme temp risk':'High extreme temp risk';
 }
 
 function renderTable(days){
   document.getElementById('tableBody').innerHTML=days.map(d=>{
-    const ip=Math.round(d.inclement*100),jp=Math.round(d.inclement*0.1*100);
+    const ip=Math.round(d.inclement*100), jp=Math.round(d.inclement*0.1*100);
     const b=ip<25?'badge-low':ip<50?'badge-mod':ip<75?'badge-high':'badge-severe';
     const l=ip<25?'Low':ip<50?'Moderate':ip<75?'High':'Severe';
     const jb=jp<5?'badge-low':jp<10?'badge-mod':'badge-high';
     const dt=new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',weekday:'short'});
-    return`<tr>
+    return `<tr>
       <td style="color:var(--text2)">${dt}</td>
       <td style="color:var(--cold)">${d.p5}°F</td>
       <td style="color:var(--accent2)">${d.p50}°F</td>
@@ -1158,34 +997,36 @@ function renderTable(days){
 }
 
 function renderTimeChart(data){
-  if(timeChartInst)timeChartInst.destroy();
+  if(timeChartInst){timeChartInst.destroy();}
   const ctx=document.getElementById('timeChart').getContext('2d');
   const labels=data.days.map(d=>new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',weekday:'short'}));
   const incl=data.days.map(d=>Math.round(d.inclement*100));
-  timeChartInst=new Chart(ctx,{data:{labels,datasets:[
-    {type:'line',label:'P95',data:data.days.map(d=>d.p95),borderColor:'rgba(255,107,53,0.7)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:0.4,order:3},
-    {type:'line',label:'P50',data:data.days.map(d=>d.p50),borderColor:'rgba(91,155,255,1)',backgroundColor:'transparent',borderWidth:2.5,pointRadius:0,tension:0.4,fill:false,order:1},
-    {type:'line',label:'P5',data:data.days.map(d=>d.p5),borderColor:'rgba(125,211,252,0.7)',backgroundColor:'rgba(125,211,252,0.06)',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:0.4,fill:'+2',order:3},
-    {type:'bar',label:'Inclement%',data:incl,backgroundColor:incl.map(v=>v<25?'rgba(52,211,153,0.25)':v<50?'rgba(251,191,36,0.25)':v<75?'rgba(255,107,53,0.3)':'rgba(239,68,68,0.35)'),borderColor:'transparent',yAxisID:'y2',order:4}
-  ]},options:{responsive:true,interaction:{mode:'index',intersect:false},
-    plugins:{legend:{display:false},tooltip:{backgroundColor:'#0a3f9e',borderColor:'#2a65d0',borderWidth:1,titleColor:'#93b4e8',bodyColor:'#e8f0ff',padding:12,
-      callbacks:{label:c=>c.dataset.label==='Inclement%'?` Inclement: ${c.raw}%`:` ${c.dataset.label}: ${c.raw}°F`}}},
-    scales:{
-      x:{grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#93b4e8',font:{family:'DM Mono',size:11},maxRotation:45,maxTicksLimit:14}},
-      y:{position:'left',grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#93b4e8',font:{family:'DM Mono',size:11},callback:v=>v+'°F'}},
-      y2:{position:'right',grid:{display:false},min:0,max:100,ticks:{color:'#93b4e8',font:{family:'DM Mono',size:11},callback:v=>v+'%'}}
-    }}
+  timeChartInst=new Chart(ctx,{
+    data:{labels,datasets:[
+      {type:'line',label:'P95',data:data.days.map(d=>d.p95),borderColor:'rgba(255,107,53,0.7)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:0.4,order:3},
+      {type:'line',label:'P50',data:data.days.map(d=>d.p50),borderColor:'rgba(79,114,255,1)',backgroundColor:'transparent',borderWidth:2.5,pointRadius:0,tension:0.4,fill:false,order:1},
+      {type:'line',label:'P5',data:data.days.map(d=>d.p5),borderColor:'rgba(56,189,248,0.7)',backgroundColor:'rgba(56,189,248,0.06)',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:0.4,fill:'+2',order:3},
+      {type:'bar',label:'Inclement%',data:incl,backgroundColor:incl.map(v=>v<25?'rgba(52,211,153,0.25)':v<50?'rgba(251,191,36,0.25)':v<75?'rgba(255,107,53,0.3)':'rgba(239,68,68,0.35)'),borderColor:'transparent',yAxisID:'y2',order:4}
+    ]},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#0a3f9e',borderColor:'#2a65d0',borderWidth:1,titleColor:'#93b4e8',bodyColor:'#e8f0ff',padding:12,
+        callbacks:{label:c=>c.dataset.label==='Inclement%'?` Inclement: ${c.raw}%`:` ${c.dataset.label}: ${c.raw}°F`}}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#93b4e8',font:{family:'DM Mono',size:11},maxRotation:45,maxTicksLimit:14}},
+        y:{position:'left',grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#93b4e8',font:{family:'DM Mono',size:11},callback:v=>v+'°F'}},
+        y2:{position:'right',grid:{display:false},min:0,max:100,ticks:{color:'#93b4e8',font:{family:'DM Mono',size:11},callback:v=>v+'%'}}
+      }}
   });
 }
 
 function renderDistChart(data){
-  if(distChartInst)distChartInst.destroy();
+  if(distChartInst){distChartInst.destroy();}
   const ctx=document.getElementById('distChart').getContext('2d');
-  const labels=data.distPts.map(p=>p.x),yVals=data.distPts.map(p=>p.y),maxY=Math.max(...yVals);
-  const bg=data.distPts.map(p=>(p.x<data.p5||p.x>data.p95)?'rgba(255,107,53,0.15)':'rgba(91,155,255,0.25)');
+  const labels=data.distPts.map(p=>p.x), yVals=data.distPts.map(p=>p.y), maxY=Math.max(...yVals);
+  const bg=data.distPts.map(p=>(p.x<data.p5||p.x>data.p95)?'rgba(255,107,53,0.15)':'rgba(79,114,255,0.25)');
   distChartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[
     {data:yVals,backgroundColor:bg,borderColor:bg.map(c=>c.replace('0.15','0.5').replace('0.25','0.6')),borderWidth:1,barPercentage:1.0,categoryPercentage:1.0},
-    {type:'line',data:yVals,borderColor:'rgba(144,191,255,0.9)',borderWidth:2,pointRadius:0,tension:0.4,fill:false}
+    {type:'line',data:yVals,borderColor:'rgba(123,155,255,0.9)',borderWidth:2,pointRadius:0,tension:0.4,fill:false}
   ]},options:{responsive:true,
     plugins:{legend:{display:false},tooltip:{backgroundColor:'#0a3f9e',borderColor:'#2a65d0',borderWidth:1,titleColor:'#93b4e8',bodyColor:'#e8f0ff',
       callbacks:{title:i=>i[0].label+'°F',label:c=>` Relative probability: ${(c.raw/maxY*100).toFixed(1)}%`}}},
