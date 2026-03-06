@@ -576,9 +576,26 @@ async function boot() {
 
 async function handleSession(session) {
   SESSION.user = session.user;
+  const errEl = document.getElementById('loginError');
+
   const { data: profile, error } = await SB
     .from('profiles').select('role').eq('id', session.user.id).single();
-  if (error || !profile) { await SB.auth.signOut(); return; }
+
+  if (error || !profile) {
+    if (session.user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      await SB.from('profiles').upsert({ id: session.user.id, email: session.user.email, role: 'admin' });
+      SESSION.role = 'admin';
+      document.getElementById('adminEmailDisplay').textContent = session.user.email;
+      showPage('adminPage');
+      await refreshAdminUI();
+      return;
+    }
+    await SB.auth.signOut();
+    errEl.textContent = 'Login failed: ' + (error ? error.message : 'No profile found. Run the SQL setup script.');
+    errEl.style.display = 'block';
+    return;
+  }
+
   SESSION.role = profile.role;
   if (profile.role === 'admin') {
     document.getElementById('adminEmailDisplay').textContent = session.user.email;
@@ -586,7 +603,7 @@ async function handleSession(session) {
     await refreshAdminUI();
   } else {
     document.getElementById('userEmailDisplay').textContent = session.user.email;
-    document.getElementById('modalUserLabel').textContent   = 'Updating password for ' + session.user.email;
+    document.getElementById('modalUserLabel').textContent = 'Updating password for ' + session.user.email;
     showPage('userPage');
     initDateDefaults();
   }
