@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Joro · Weather Risk Intelligence</title>
+<title>weathermytrip · Weather Risk Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -253,8 +253,8 @@ table.data-tbl tbody td { padding:10px 16px; }
 <!-- ═══ LOGIN ══════════════════════════════════════════════════════════════════ -->
 <div id="loginPage" class="page active">
   <div class="login-box">
-    <div class="login-logo-sup">planette.ai · joro</div>
-    <div class="login-logo">Weather<span>Risk</span></div>
+    <div class="login-logo-sup">weathermytrip</div>
+    <div class="login-logo">weather<span>mytrip</span></div>
     <div class="login-field">
       <label>Email</label>
       <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="username">
@@ -267,7 +267,7 @@ table.data-tbl tbody td { padding:10px 16px; }
     <button class="btn-primary" id="loginBtn" onclick="doLogin()">
       <div class="sp"></div><span class="bt">Sign In</span>
     </button>
-    <div class="login-footer">Enterprise access only · Powered by <strong style="color:var(--accent2)">Planette.ai Joro</strong></div>
+    <div class="login-footer">Enterprise access only · Powered by <strong style="color:var(--accent2)">weathermytrip</strong></div>
   </div>
 </div>
 
@@ -277,8 +277,8 @@ table.data-tbl tbody td { padding:10px 16px; }
 
   <div class="topbar">
     <div class="logo-area">
-      <div class="logo-sup">planette.ai · joro</div>
-      <div class="logo">Weather<span class="ac">Risk</span> <span style="font-size:15px;color:var(--admin);font-weight:600;letter-spacing:0.06em;">ADMIN</span></div>
+      <div class="logo-sup">weathermytrip</div>
+      <div class="logo">weather<span class="ac">mytrip</span> <span style="font-size:15px;color:var(--admin);font-weight:600;letter-spacing:0.06em;">ADMIN</span></div>
     </div>
     <div class="topbar-right">
       <div class="user-chip"><div class="role-dot admin"></div><span id="adminEmailDisplay">–</span><span style="color:var(--text3);font-size:10px;margin-left:4px;">· ADMIN</span></div>
@@ -372,8 +372,8 @@ table.data-tbl tbody td { padding:10px 16px; }
 
   <div class="topbar">
     <div class="logo-area">
-      <div class="logo-sup">planette.ai · joro</div>
-      <div class="logo">Weather<span class="ac">Risk</span></div>
+      <div class="logo-sup">weathermytrip</div>
+      <div class="logo">weather<span class="ac">mytrip</span></div>
     </div>
     <div class="topbar-right">
       <span class="badge">90% CI · P5–P95</span>
@@ -541,8 +541,8 @@ table.data-tbl tbody td { padding:10px 16px; }
    Replace YOUR_SUPABASE_URL and YOUR_SUPABASE_ANON_KEY below.
    The anon key is safe to expose — RLS policies protect your data.
 ════════════════════════════════════════════════════════════════ */
-const SUPABASE_URL  = 'https://rpgiimcgzzhpatoityug.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwZ2lpbWNnenpocGF0b2l0eXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDE3NDgsImV4cCI6MjA4ODM3Nzc0OH0.w6M1Aa_FsDpvV1Z7X79ebXSUDKmmQsWAsldaJm7hMRI';
+const SUPABASE_URL  = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
 const ADMIN_EMAIL   = 'donsyahalom@gmail.com'; // protected from deletion
 
 /* ── GLOBALS ── */
@@ -603,11 +603,13 @@ async function doLogin() {
   errEl.style.display = 'none';
   if (!email || !pass) { errEl.textContent = 'Email and password are required.'; errEl.style.display = 'block'; return; }
   btn.disabled = true; btn.classList.add('loading');
-  const { error } = await SB.auth.signInWithPassword({ email, password: pass });
+  const { data, error } = await SB.auth.signInWithPassword({ email, password: pass });
   btn.disabled = false; btn.classList.remove('loading');
   if (error) {
     errEl.textContent = error.message.includes('Invalid') ? 'Invalid email or password.' : error.message;
     errEl.style.display = 'block';
+  } else if (data && data.session) {
+    await handleSession(data.session);
   }
 }
 
