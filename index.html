@@ -223,6 +223,16 @@ table.data-tbl tbody td { padding:10px 16px; }
 .footnote a { color:var(--accent2); text-decoration:none; }
 .footnote a:hover { text-decoration:underline; }
 
+/* RISK DAYS CALLOUT */
+.riskdays-callout { display:none; background:linear-gradient(135deg,rgba(196,181,253,0.07),rgba(255,107,53,0.07)); border:1px solid var(--border2); border-radius:4px; padding:20px 28px; margin-top:16px; display:none; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap; }
+.riskdays-callout.visible { display:flex; }
+.riskdays-left { display:flex; flex-direction:column; gap:4px; }
+.riskdays-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; color:var(--text); }
+.riskdays-sub { font-size:12px; color:var(--text2); line-height:1.6; max-width:520px; }
+.riskdays-right { display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0; }
+.riskdays-pct { font-family:'Syne',sans-serif; font-size:42px; font-weight:800; line-height:1; background:linear-gradient(135deg,var(--admin),var(--warn)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.riskdays-label { font-size:11px; color:var(--text3); letter-spacing:0.1em; text-transform:uppercase; text-align:right; }
+
 /* RESPONSIVE */
 @media(max-width:900px){
   .config-grid { grid-template-columns:1fr 1fr; }
@@ -393,6 +403,23 @@ table.data-tbl tbody td { padding:10px 16px; }
         <button class="btn-run" id="runBtn" onclick="runAnalysis()">
           <div class="spinner"></div><span class="btn-text">▶ Analyze</span>
         </button>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
+      <div class="field" style="max-width:260px;">
+        <label>Risk Days Threshold</label>
+        <input type="number" id="riskDaysInput" min="1" max="180" placeholder="e.g. 3" style="width:100%;" oninput="updateRiskDays()">
+      </div>
+      <div style="font-size:12px;color:var(--text3);padding-bottom:12px;line-height:1.5;">Enter a number of days to see the<br>probability of hitting that many joint-risk days.</div>
+    </div>
+    <div class="riskdays-callout" id="riskDaysCallout">
+      <div class="riskdays-left">
+        <div class="riskdays-title">📅 Probability of ≥<span id="riskDaysN">–</span> Joint-Risk Days</div>
+        <div class="riskdays-sub" id="riskDaysSub">–</div>
+      </div>
+      <div class="riskdays-right">
+        <div class="riskdays-pct" id="riskDaysPct">--%</div>
+        <div class="riskdays-label">likelihood</div>
       </div>
     </div>
     <div class="api-row">
@@ -975,7 +1002,66 @@ function analytics(days, loc) {
   return {location:loc,days,avgP5,avgP50,avgP95,ciWidth:avgP95-avgP5,avgInclement,avgPrecip,avgStorm,avgWind,extremeTempRisk,pJoint,distPts,p5:avgP5,p95:avgP95};
 }
 
+/* ── RISK DAYS THRESHOLD ── */
+// Per-day joint-risk probability: P(inclement_i) * 0.10 (matches pJoint formula)
+function perDayJointProb(d) { return Math.min(0.99, d.inclement * 0.10); }
+
+// Binomial CDF: P(X >= k) over n days with per-day probabilities (Poisson approx for speed)
+function probAtLeastKDays(days, k) {
+  if (!days || days.length === 0 || k <= 0) return 1;
+  if (k > days.length) return 0;
+  // Use exact binomial with per-day probs via DP
+  // dp[j] = probability of exactly j joint-risk days considering first i days
+  let dp = new Array(days.length + 1).fill(0);
+  dp[0] = 1;
+  for (let i = 0; i < days.length; i++) {
+    const p = perDayJointProb(days[i]);
+    // Iterate backwards to avoid using updated values
+    for (let j = i + 1; j >= 1; j--) {
+      dp[j] = dp[j] * (1 - p) + dp[j-1] * p;
+    }
+    dp[0] *= (1 - p);
+  }
+  // Sum P(X >= k)
+  let prob = 0;
+  for (let j = k; j <= days.length; j++) prob += dp[j];
+  return Math.min(1, Math.max(0, prob));
+}
+
+let _lastAnalyticsData = null; // store for live threshold updates
+
+function updateRiskDays() {
+  const input = document.getElementById('riskDaysInput');
+  const callout = document.getElementById('riskDaysCallout');
+  const k = parseInt(input.value);
+  if (!_lastAnalyticsData || isNaN(k) || k < 1) {
+    callout.classList.remove('visible');
+    return;
+  }
+  const days = _lastAnalyticsData.days;
+  const n = days.length;
+  if (k > n) {
+    callout.classList.add('visible');
+    document.getElementById('riskDaysN').textContent = k;
+    document.getElementById('riskDaysPct').textContent = '0%';
+    document.getElementById('riskDaysSub').textContent =
+      `The date range only spans ${n} day${n===1?'':'s'} — threshold of ${k} days exceeds the range.`;
+    return;
+  }
+  const prob = probAtLeastKDays(days, k);
+  const pct = Math.round(prob * 100);
+  const avgJointPerDay = Math.round(days.reduce((a,d)=>a+perDayJointProb(d),0) / n * 100);
+  callout.classList.add('visible');
+  document.getElementById('riskDaysN').textContent = k;
+  document.getElementById('riskDaysPct').textContent = pct + '%';
+  document.getElementById('riskDaysSub').textContent =
+    `Over this ${n}-day period, there is a ${pct}% probability of experiencing at least ${k} day${k===1?'':'s'} with simultaneous extreme temperature AND inclement weather. ` +
+    `Average daily joint-risk probability is ${avgJointPerDay}%. Computed using exact binomial distribution across all ${n} days.`;
+}
+
 function renderAll(data) {
+  _lastAnalyticsData = data;
+  updateRiskDays(); // refresh callout if threshold already entered
   document.getElementById('p5Temp').textContent  = data.avgP5+'°F';
   document.getElementById('p50Temp').textContent = data.avgP50+'°F';
   document.getElementById('p95Temp').textContent = data.avgP95+'°F';
