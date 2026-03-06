@@ -301,6 +301,7 @@ table.data-tbl tbody td { padding:10px 16px; }
     <button class="admin-tab" onclick="switchAdminTab('accounts',this)">Manage Accounts</button>
     <button class="admin-tab" onclick="switchAdminTab('create',this)">Create Account</button>
     <button class="admin-tab" onclick="switchAdminTab('password',this)">Change Password</button>
+    <button class="admin-tab" onclick="switchAdminTab('settings',this)">Settings</button>
   </div>
 
   <!-- Dashboard -->
@@ -345,6 +346,30 @@ table.data-tbl tbody td { padding:10px 16px; }
       </div>
       <button class="btn-action" onclick="createAccount()">Create Account</button>
       <div class="inline-msg" id="createMsg"></div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div id="panel-settings" class="admin-panel">
+    <div class="section-label">Portal Settings</div>
+    <div class="panel panel-admin-accent">
+      <div class="panel-title">⚙️ Risk Days Default Threshold</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.7;">
+        When a user selects a date range, the Risk Days Threshold input will automatically default to this percentage of the total days in that range.
+        For example, 60% of a 30-day range = 18 days as the default threshold.
+      </p>
+      <div class="form-row form-row-2">
+        <div class="field">
+          <label>Default Threshold (% of date range)</label>
+          <input type="number" id="settingsRiskPct" min="1" max="100" placeholder="e.g. 60" style="max-width:200px;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;justify-content:flex-end;padding-bottom:2px;">
+          <div style="font-size:12px;color:var(--text3);">Current saved value: <span id="settingsRiskPctCurrent" style="color:var(--accent2);font-weight:600;">--%</span></div>
+          <div style="font-size:11px;color:var(--text3);">Range: 1–100%</div>
+        </div>
+      </div>
+      <button class="btn-action accent" onclick="saveRiskDaysDefault()">Save Setting</button>
+      <div class="inline-msg" id="settingsMsg"></div>
     </div>
   </div>
 
@@ -406,11 +431,16 @@ table.data-tbl tbody td { padding:10px 16px; }
       </div>
     </div>
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
-      <div class="field" style="max-width:260px;">
+      <div class="field" style="max-width:200px;">
         <label>Risk Days Threshold</label>
         <input type="number" id="riskDaysInput" min="1" max="180" placeholder="e.g. 3" style="width:100%;" oninput="updateRiskDays()">
       </div>
-      <div style="font-size:12px;color:var(--text3);padding-bottom:12px;line-height:1.5;">Enter a number of days to see the<br>probability of hitting that many joint-risk days.</div>
+      <div style="display:flex;flex-direction:column;gap:3px;padding-bottom:10px;">
+        <div style="font-size:11px;letter-spacing:0.1em;color:var(--text2);text-transform:uppercase;">% of Date Range</div>
+        <div id="riskDaysPctOfRange" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--accent2);line-height:1;">--%</div>
+        <div style="font-size:11px;color:var(--text3);">of the selected period</div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);padding-bottom:12px;line-height:1.5;margin-left:4px;">Enter a number of days to see the<br>probability of hitting that many joint-risk days.</div>
     </div>
     <div class="riskdays-callout" id="riskDaysCallout">
       <div class="riskdays-left">
@@ -599,6 +629,8 @@ async function boot() {
     if (event === 'SIGNED_IN'  && session) await handleSession(session);
     if (event === 'SIGNED_OUT') { SESSION = { user:null, role:null }; showPage('loginPage'); }
   });
+  // Load admin-configurable defaults
+  await loadRiskDaysDefault();
 }
 
 async function handleSession(session) {
@@ -667,6 +699,11 @@ document.addEventListener('DOMContentLoaded', () => {
   ['loginEmail','loginPassword'].forEach(id =>
     document.getElementById(id).addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); })
   );
+  // Re-default risk days when dates change
+  ['startDate','endDate'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', () => setRiskDaysDefault());
+  });
   document.querySelectorAll('.modal-overlay').forEach(el =>
     el.addEventListener('click', e => { if (e.target===el) el.classList.remove('open'); })
   );
@@ -690,6 +727,36 @@ function loadScript(src) {
 }
 
 /* ── ADMIN TABS ─────────────────────────────────────────────────────────────── */
+/* ── ADMIN SETTINGS ── */
+async function loadRiskDaysDefault() {
+  if (!SB) return;
+  try {
+    const { data, error } = await SB.from('app_config').select('value').eq('key','risk_days_default_pct').single();
+    if (!error && data) {
+      RISK_DAYS_DEFAULT_PCT = parseFloat(data.value) || 60;
+    }
+  } catch(e) { /* table may not exist yet, use default 60 */ }
+  const el = document.getElementById('settingsRiskPctCurrent');
+  if (el) el.textContent = RISK_DAYS_DEFAULT_PCT + '%';
+  const inp = document.getElementById('settingsRiskPct');
+  if (inp) inp.value = RISK_DAYS_DEFAULT_PCT;
+  setRiskDaysDefault();
+}
+
+async function saveRiskDaysDefault() {
+  const inp = document.getElementById('settingsRiskPct');
+  const msg = document.getElementById('settingsMsg');
+  const val = parseFloat(inp.value);
+  if (isNaN(val) || val < 1 || val > 100) return showMsg(msg,'error','Enter a value between 1 and 100.');
+  // Upsert into app_config table
+  const { error } = await SB.from('app_config').upsert({ key:'risk_days_default_pct', value: String(val) }, { onConflict:'key' });
+  if (error) return showMsg(msg,'error','Save failed: ' + error.message);
+  RISK_DAYS_DEFAULT_PCT = val;
+  document.getElementById('settingsRiskPctCurrent').textContent = val + '%';
+  showMsg(msg,'success','✓ Setting saved. Default threshold is now ' + val + '% of date range.');
+  setRiskDaysDefault();
+}
+
 function switchAdminTab(name, btn) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
@@ -881,6 +948,20 @@ function initDateDefaults() {
   const ed = document.getElementById('endDate');
   if (sd) sd.value = fmt(s);
   if (ed) ed.value = fmt(e);
+  setRiskDaysDefault();
+}
+
+function setRiskDaysDefault() {
+  const sd = document.getElementById('startDate');
+  const ed = document.getElementById('endDate');
+  const inp = document.getElementById('riskDaysInput');
+  if (!sd || !ed || !inp) return;
+  const start = new Date(sd.value), end = new Date(ed.value);
+  if (isNaN(start) || isNaN(end)) return;
+  const totalDays = Math.round((end - start) / 86400000) + 1;
+  const defaultDays = Math.max(1, Math.round(totalDays * RISK_DAYS_DEFAULT_PCT / 100));
+  inp.value = defaultDays;
+  updateRiskDays();
 }
 
 function loadChartJS() {
@@ -1028,12 +1109,31 @@ function probAtLeastKDays(days, k) {
   return Math.min(1, Math.max(0, prob));
 }
 
+// ── ADMIN-CONFIGURABLE DEFAULTS ──────────────────────────────────────────────
+let RISK_DAYS_DEFAULT_PCT = 60; // % of date range to default the risk days threshold to
+// Loaded from Supabase app_config table on boot; admin can change via Settings tab
+
 let _lastAnalyticsData = null; // store for live threshold updates
 
 function updateRiskDays() {
   const input = document.getElementById('riskDaysInput');
   const callout = document.getElementById('riskDaysCallout');
   const k = parseInt(input.value);
+
+  // Update % of range display (works even before analysis is run)
+  const pctOfRangeEl = document.getElementById('riskDaysPctOfRange');
+  if (pctOfRangeEl) {
+    const sd = document.getElementById('startDate');
+    const ed = document.getElementById('endDate');
+    if (sd && ed && sd.value && ed.value && !isNaN(k) && k >= 1) {
+      const totalDays = Math.round((new Date(ed.value) - new Date(sd.value)) / 86400000) + 1;
+      const pofr = totalDays > 0 ? ((k / totalDays) * 100).toFixed(1) : '--';
+      pctOfRangeEl.textContent = pofr + '%';
+    } else {
+      pctOfRangeEl.textContent = '--%';
+    }
+  }
+
   if (!_lastAnalyticsData || isNaN(k) || k < 1) {
     callout.classList.remove('visible');
     return;
@@ -1049,7 +1149,7 @@ function updateRiskDays() {
     return;
   }
   const prob = probAtLeastKDays(days, k);
-  const pct = Math.round(prob * 100);
+  const pct = (prob * 100).toFixed(6);
   const avgJointPerDay = Math.round(days.reduce((a,d)=>a+perDayJointProb(d),0) / n * 100);
   callout.classList.add('visible');
   document.getElementById('riskDaysN').textContent = k;
