@@ -675,7 +675,13 @@ function switchAdminTab(name, btn) {
 async function refreshAdminUI() {
   const { data, error } = await SB
     .from('profiles').select('id,email,role,created_at').order('created_at',{ascending:false});
-  if (error) { console.error(error); return; }
+  if (error) {
+    console.error('refreshAdminUI error:', error);
+    const noAccts = '<tr><td colspan="4" style="color:var(--danger);padding:20px;text-align:center">⚠️ Failed to load accounts: ' + error.message + '</td></tr>';
+    document.getElementById('dashTable').innerHTML = noAccts;
+    document.getElementById('accountsTable').innerHTML = noAccts;
+    return;
+  }
   allProfiles = data || [];
   const users  = allProfiles.filter(p => p.role === 'user');
   const admins = allProfiles.filter(p => p.role === 'admin');
