@@ -371,6 +371,29 @@ table.data-tbl tbody td { padding:10px 16px; }
       <button class="btn-action accent" onclick="saveRiskDaysDefault()">Save Setting</button>
       <div class="inline-msg" id="settingsMsg"></div>
     </div>
+
+    <div class="panel panel-admin-accent" style="margin-top:24px;">
+      <div class="panel-title">🔑 API Configuration</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.7;">
+        Set the Joro API credentials used by all users. These are stored securely in Supabase and never shown to users.
+        Leave the API key blank to run in demo/simulation mode.
+      </p>
+      <div class="form-row form-row-2">
+        <div class="field">
+          <label>Joro API Key</label>
+          <input type="password" id="settingsApiKey" placeholder="joro_sk_...">
+        </div>
+        <div class="field">
+          <label>API Base URL</label>
+          <input type="text" id="settingsApiBase" placeholder="https://api.planette.ai/joro/v1">
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:16px;">
+        Status: <span id="settingsApiStatus" style="color:var(--accent2);font-weight:600;">–</span>
+      </div>
+      <button class="btn-action accent" onclick="saveApiConfig()">Save API Settings</button>
+      <div class="inline-msg" id="settingsApiMsg"></div>
+    </div>
   </div>
 
   <!-- Change Password -->
@@ -452,15 +475,12 @@ table.data-tbl tbody td { padding:10px 16px; }
         <div class="riskdays-label">likelihood</div>
       </div>
     </div>
-    <div class="api-row">
-      <div class="field"><label>Joro API Key</label><input type="password" id="apiKey" placeholder="joro_sk_...  (enterprise credentials)"></div>
-      <div class="field"><label>API Base URL</label><input type="text" id="apiBase" value="https://api.planette.ai/joro/v1"></div>
-    </div>
+
   </div>
 
   <div class="status-bar" id="statusBar">
     <div class="status-dot" id="statusDot"></div>
-    <span id="statusText">Enter your Joro API key and query parameters to begin.</span>
+    <span id="statusText">Enter your query parameters and click Analyze.</span>
   </div>
   <div class="error-panel" id="errorPanel"></div>
 
@@ -731,15 +751,26 @@ function loadScript(src) {
 async function loadRiskDaysDefault() {
   if (!SB) return;
   try {
-    const { data, error } = await SB.from('app_config').select('value').eq('key','risk_days_default_pct').single();
-    if (!error && data) {
-      RISK_DAYS_DEFAULT_PCT = parseFloat(data.value) || 60;
+    const { data } = await SB.from('app_config').select('key,value').in('key',['risk_days_default_pct','api_key','api_base']);
+    if (data) {
+      data.forEach(row => {
+        if (row.key === 'risk_days_default_pct') RISK_DAYS_DEFAULT_PCT = parseFloat(row.value) || 60;
+        if (row.key === 'api_key')  API_KEY  = row.value || '';
+        if (row.key === 'api_base') API_BASE = row.value || 'https://api.planette.ai/joro/v1';
+      });
     }
-  } catch(e) { /* table may not exist yet, use default 60 */ }
-  const el = document.getElementById('settingsRiskPctCurrent');
-  if (el) el.textContent = RISK_DAYS_DEFAULT_PCT + '%';
-  const inp = document.getElementById('settingsRiskPct');
-  if (inp) inp.value = RISK_DAYS_DEFAULT_PCT;
+  } catch(e) { /* table may not exist yet, use defaults */ }
+  // Update admin settings UI if present
+  const riskEl = document.getElementById('settingsRiskPctCurrent');
+  if (riskEl) riskEl.textContent = RISK_DAYS_DEFAULT_PCT + '%';
+  const riskInp = document.getElementById('settingsRiskPct');
+  if (riskInp) riskInp.value = RISK_DAYS_DEFAULT_PCT;
+  const apiKeyInp = document.getElementById('settingsApiKey');
+  if (apiKeyInp) apiKeyInp.value = API_KEY ? '••••••••••••' : '';
+  const apiBaseInp = document.getElementById('settingsApiBase');
+  if (apiBaseInp) apiBaseInp.value = API_BASE;
+  const apiStatus = document.getElementById('settingsApiStatus');
+  if (apiStatus) apiStatus.textContent = API_KEY ? 'API key configured ✓' : 'No API key — running in demo mode';
   setRiskDaysDefault();
 }
 
@@ -755,6 +786,31 @@ async function saveRiskDaysDefault() {
   document.getElementById('settingsRiskPctCurrent').textContent = val + '%';
   showMsg(msg,'success','✓ Setting saved. Default threshold is now ' + val + '% of date range.');
   setRiskDaysDefault();
+}
+
+async function saveApiConfig() {
+  const keyInp  = document.getElementById('settingsApiKey');
+  const baseInp = document.getElementById('settingsApiBase');
+  const msg     = document.getElementById('settingsApiMsg');
+  const keyVal  = keyInp.value.trim();
+  const baseVal = baseInp.value.trim() || 'https://api.planette.ai/joro/v1';
+
+  // Don't overwrite key if user left the masked placeholder
+  const upsertRows = [{ key:'api_base', value: baseVal }];
+  if (keyVal && keyVal !== '••••••••••••') {
+    upsertRows.push({ key:'api_key', value: keyVal });
+    API_KEY = keyVal;
+  }
+  API_BASE = baseVal;
+
+  const { error } = await SB.from('app_config').upsert(upsertRows, { onConflict:'key' });
+  if (error) return showMsg(msg,'error','Save failed: ' + error.message);
+
+  const apiStatus = document.getElementById('settingsApiStatus');
+  if (apiStatus) apiStatus.textContent = API_KEY ? 'API key configured ✓' : 'No API key — running in demo mode';
+  keyInp.value = API_KEY ? '••••••••••••' : '';
+  baseInp.value = API_BASE;
+  showMsg(msg,'success','✓ API settings saved.');
 }
 
 function switchAdminTab(name, btn) {
@@ -989,8 +1045,8 @@ async function runAnalysis() {
   const location  = document.getElementById('location').value.trim();
   const startDate = document.getElementById('startDate').value;
   const endDate   = document.getElementById('endDate').value;
-  const apiKey    = document.getElementById('apiKey').value.trim();
-  const apiBase   = document.getElementById('apiBase').value.trim();
+  const apiKey  = API_KEY;
+  const apiBase = API_BASE || 'https://api.planette.ai/joro/v1';
 
   if (!location) { showError('Please enter a location.'); return; }
   if (!startDate || !endDate) { showError('Please select both dates.'); return; }
@@ -1112,6 +1168,8 @@ function probAtLeastKDays(days, k) {
 // ── ADMIN-CONFIGURABLE DEFAULTS ──────────────────────────────────────────────
 let RISK_DAYS_DEFAULT_PCT = 60; // % of date range to default the risk days threshold to
 // Loaded from Supabase app_config table on boot; admin can change via Settings tab
+let API_KEY  = '';
+let API_BASE = 'https://api.planette.ai/joro/v1';
 
 let _lastAnalyticsData = null; // store for live threshold updates
 
@@ -1187,7 +1245,7 @@ function renderAll(data) {
     `<strong style="color:var(--text2)">Methodology:</strong> Temperature CI from Joro ensemble P5/P95 (z=±1.645σ). ` +
     `Inclement = composite of precipitation, convective storm (CAPE), and high wind (&gt;40 mph). ` +
     `Joint probability uses daily independence: P(joint≥1) = 1−∏ᵢ(1−P(incl_i)×0.10). ` +
-    (!document.getElementById('apiKey').value
+    (!API_KEY
       ? `<br><strong style="color:var(--warn)">Demo mode:</strong> Simulated data shown. ` +
         `Contact <a href="https://www.planette.ai" target="_blank">planette.ai</a> for enterprise Joro API access.`
       : '');
