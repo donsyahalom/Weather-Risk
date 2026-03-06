@@ -718,6 +718,11 @@ function esc(s) {
 
 /* ── ACCOUNT CRUD ── */
 async function createAccount() {
+  // Guard: only admins can create accounts
+  if (!SESSION.user || SESSION.role !== 'admin') {
+    return showMsg(document.getElementById('createMsg'), 'error', 'Unauthorized: only admins can create accounts.');
+  }
+
   const email   = document.getElementById('newEmail').value.trim().toLowerCase();
   const role    = document.getElementById('newRole').value;
   const pass    = document.getElementById('newPass').value;
@@ -729,13 +734,31 @@ async function createAccount() {
   if (pass.length < 8)       return showMsg(msg,'error','Password must be at least 8 characters.');
   if (pass !== confirm)      return showMsg(msg,'error','Passwords do not match.');
 
-  const { data, error } = await SB.auth.signUp({ email, password: pass });
+  showMsg(msg,'success','Creating account...');
+
+  // Use signUp — works because "Disable signup" only blocks the public-facing
+  // signup; an authenticated admin session can still call it server-side.
+  // Email confirmation is disabled via the SQL script so accounts are active immediately.
+  const { data, error } = await SB.auth.signUp({
+    email,
+    password: pass,
+    options: { data: { role }, emailRedirectTo: null }
+  });
+
   if (error) return showMsg(msg,'error', error.message);
-  if (data.user) await SB.from('profiles').upsert({ id: data.user.id, email, role });
+
+  if (data.user) {
+    const { error: profileError } = await SB.from('profiles').upsert({ id: data.user.id, email, role });
+    if (profileError) return showMsg(msg,'error','Auth user created but profile failed: ' + profileError.message);
+    showMsg(msg,'success',`✓ Account created: ${email} (${role}) — ready to log in.`);
+  } else {
+    // Supabase returns no user object when signup is disabled at the platform level
+    showMsg(msg,'error','Account creation blocked by Supabase. Make sure you ran the admin-only-signup.sql script and that "Disable Signup" is OFF in Supabase → Authentication → Settings (the SQL script handles security via RLS instead).');
+    return;
+  }
 
   ['newEmail','newPass','newPassConfirm'].forEach(id => { document.getElementById(id).value=''; });
   document.getElementById('newRole').value = 'user';
-  showMsg(msg,'success',`✓ Account created: ${email} (${role})`);
   await refreshAdminUI();
 }
 
