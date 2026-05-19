@@ -1,31 +1,70 @@
-# ================================================================
-#  WeatherRisk · netlify.toml
-# ================================================================
+# ============================================================
+#  WeatherMyTrip — Netlify configuration
+# ============================================================
 
 [build]
-  publish = "."
+  # Static files served from /public
+  publish = "public"
 
-# SPA fallback — all routes serve index.html
+  # Serverless functions live in /netlify/functions
+  functions = "netlify/functions"
+
+  # No build command needed — pure static + serverless
+  command = "npm install"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# ── Functions ─────────────────────────────────────────────
+[functions]
+  # esbuild bundles dependencies so @supabase/supabase-js is included
+  node_bundler = "esbuild"
+
+  # Default directory-level timeout for all functions (seconds).
+  # Free tier: max 10s  |  Pro/Business: max 26s
+  # The first request per location fetches ~7300 rows from Open-Meteo
+  # and upserts into Supabase — this takes ~8–20s on a cold cache.
+  # Upgrade to Netlify Pro if you hit timeouts on first-run.
+
+[functions."analyze"]
+  # No extra config needed; inherits node_bundler above.
+  # To enable background functions (async, up to 15 min) rename the
+  # file to analyze-background.js and update the fetch URL accordingly.
+
+# ── Security headers ──────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection       = "1; mode=block"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
+
+# Cache HTML aggressively-short so deploys propagate fast
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Static assets (Chart.js is CDN-loaded so this is mostly a placeholder)
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ── Redirects ─────────────────────────────────────────────
+# SPA fallback — not strictly needed for a single-page static site
+# but good practice if you add client-side routing later
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
   status = 200
+  conditions = {Role = ["admin"]}
 
-# Security headers
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options        = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy        = "strict-origin-when-cross-origin"
-    Permissions-Policy     = "camera=(), microphone=(), geolocation=()"
-
-[[headers]]
-  for = "/index.html"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/*.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+# ── Dev server ────────────────────────────────────────────
+[dev]
+  # `netlify dev` serves the site on :8888 and routes function calls
+  # to the local functions runtime automatically.
+  # Set targetPort only if you add a separate dev server later.
+  port        = 8888
+  autoLaunch  = false

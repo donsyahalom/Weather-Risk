@@ -1,0 +1,20 @@
+{
+  "name": "weathermytrip",
+  "version": "0.2.0",
+  "description": "Historical weather risk analysis for travel planning — Open-Meteo + Supabase + Netlify",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'Static site — no build step required'",
+    "lint": "echo 'No linter configured yet'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.3"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}

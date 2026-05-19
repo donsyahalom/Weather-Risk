@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeatherMyTrip.com — Weather Risk Analysis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#1e40af;--secondary:#3b82f6;--accent:#f59e0b;
+  --danger:#ef4444;--success:#10b981;--purple:#8b5cf6;
+  --teal:#0d9488;--teal-light:#ccfbf1;
+  --bg:#f1f5f9;--card:#fff;--border:#e2e8f0;
+  --text:#1e293b;--muted:#64748b;--light:#f8fafc;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── HEADER ── */
+header{background:linear-gradient(135deg,#1e3a8a 0%,#1e40af 50%,#2563eb 100%);color:white;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;box-shadow:0 4px 20px rgba(0,0,0,0.2);flex-wrap:wrap}
+.logo h1{font-size:1.6rem;font-weight:800;letter-spacing:-0.02em;white-space:nowrap}
+.logo p{font-size:0.78rem;opacity:0.75;margin-top:0.1rem}
+.header-controls{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap}
+.header-badge{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:6px;padding:0.35rem 0.75rem;font-size:0.75rem;text-align:right;white-space:nowrap}
+/* Windy button in header */
+.windy-btn{display:inline-flex;align-items:center;gap:0.4rem;background:rgba(13,148,136,0.85);border:1px solid rgba(255,255,255,0.3);color:white;text-decoration:none;border-radius:8px;padding:0.45rem 0.9rem;font-size:0.8rem;font-weight:700;transition:all 0.18s;white-space:nowrap}
+.windy-btn:hover{background:rgba(13,148,136,1);transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,0.25)}
+.windy-btn .wi{font-size:1rem}
+/* C/F toggle in header */
+.unit-toggle{display:flex;align-items:center;gap:0;border:1.5px solid rgba(255,255,255,0.4);border-radius:8px;overflow:hidden;height:34px}
+.unit-btn{padding:0 0.85rem;height:100%;border:none;cursor:pointer;font-size:0.82rem;font-weight:700;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);transition:all 0.15s;line-height:1}
+.unit-btn.active{background:rgba(255,255,255,0.9);color:var(--primary)}
+.unit-btn:hover:not(.active){background:rgba(255,255,255,0.2);color:white}
+
+/* ── SEARCH PANEL ── */
+.search-panel{background:white;border-bottom:2px solid var(--border);padding:0.9rem 2rem;display:flex;gap:0.85rem;flex-wrap:wrap;align-items:flex-end;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.form-group{display:flex;flex-direction:column;gap:0.3rem}
+label{font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
+select,input[type=date],input[type=number]{padding:0.5rem 0.85rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;color:var(--text);background:white;outline:none;transition:border-color 0.2s,box-shadow 0.2s}
+select:focus,input:focus{border-color:var(--secondary);box-shadow:0 0 0 3px rgba(59,130,246,0.12)}
+.hint{font-size:0.67rem;color:var(--muted);margin-top:0.1rem}
+.btn{padding:0.55rem 1.35rem;border:none;border-radius:8px;cursor:pointer;font-size:0.88rem;font-weight:700;transition:all 0.18s}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;box-shadow:0 2px 8px rgba(59,130,246,0.35)}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 14px rgba(59,130,246,0.45)}
+.btn-primary:disabled{opacity:0.6;cursor:not-allowed}
+.btn-sm{padding:0.38rem 0.9rem;font-size:0.78rem}
+.btn-ghost{background:var(--border);color:var(--text)}
+.btn-ghost:hover{background:#cbd5e1}
+
+/* ── MAIN ── */
+main{max-width:1440px;margin:0 auto;padding:2rem}
+
+/* ── STATES ── */
+.loading{display:none;text-align:center;padding:5rem 2rem;color:var(--muted)}
+.spinner{width:44px;height:44px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.75s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.placeholder{text-align:center;padding:5rem 2rem;color:var(--muted)}
+.placeholder-icon{font-size:3.5rem;margin-bottom:1rem}
+.placeholder h2{font-size:1.5rem;font-weight:700;color:var(--text);margin-bottom:0.5rem}
+.placeholder p{max-width:480px;margin:0 auto 0.35rem;line-height:1.6}
+.hidden{display:none!important}
+
+/* ── BANNERS ── */
+.banner{padding:0.9rem 1.25rem;border-radius:10px;margin-bottom:1.25rem;font-size:0.88rem;display:flex;align-items:flex-start;gap:0.6rem}
+.banner-error{background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c}
+.banner-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8}
+.banner-icon{font-size:1.1rem;flex-shrink:0}
+
+/* ── CARDS ── */
+.card{background:var(--card);border-radius:16px;padding:1.5rem;border:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,0.05)}
+.card-title{font-size:0.95rem;font-weight:700;color:var(--text);margin-bottom:1.25rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border)}
+
+/* ── HERO ── */
+.risk-hero{display:grid;grid-template-columns:auto 1fr;gap:1.5rem;margin-bottom:1.75rem;align-items:start}
+.risk-scores{display:flex;flex-direction:column;gap:0.75rem}
+.risk-score-box{background:linear-gradient(160deg,#1e3a8a,#2563eb);border-radius:14px;padding:1.5rem 1.75rem;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(30,64,175,0.35);min-width:210px;text-align:center}
+.risk-score-box.secondary{background:linear-gradient(160deg,#1e293b,#334155);box-shadow:0 4px 14px rgba(0,0,0,0.2);padding:1.1rem 1.5rem}
+.risk-score-value{font-size:1.85rem;font-weight:900;line-height:1;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;font-family:'Courier New',monospace}
+.risk-score-value.big{font-size:2.1rem}
+.risk-score-label{font-size:0.72rem;opacity:0.8;margin-top:0.4rem;line-height:1.4}
+.risk-rating{margin-top:0.6rem;background:rgba(255,255,255,0.18);border-radius:6px;padding:0.2rem 0.65rem;font-size:0.72rem;font-weight:700;letter-spacing:0.05em}
+.risk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:0.85rem;align-content:start}
+.risk-item{background:var(--light);border-radius:10px;padding:0.85rem 1rem;border-left:4px solid var(--secondary);transition:transform 0.15s}
+.risk-item:hover{transform:translateY(-2px)}
+.risk-item-label{font-size:0.67rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
+.risk-item-value{font-size:1rem;font-weight:800;color:var(--text);margin-top:0.15rem;line-height:1;font-variant-numeric:tabular-nums;font-family:'Courier New',monospace}
+.risk-item-sub{font-size:0.67rem;color:var(--muted);margin-top:0.2rem;line-height:1.3}
+
+/* ── CHARTS ── */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem}
+.chart-container{position:relative;height:290px}
+.chart-container-sm{position:relative;height:240px}
+.chart-container-lg{position:relative;height:300px}
+
+/* ── PDF TABS ── */
+.pdf-tabs{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.25rem}
+.tab-btn{padding:0.38rem 1rem;border:2px solid var(--border);border-radius:20px;cursor:pointer;font-size:0.8rem;font-weight:700;background:white;color:var(--muted);transition:all 0.18s}
+.tab-btn.active{background:var(--primary);border-color:var(--primary);color:white;box-shadow:0 2px 8px rgba(30,64,175,0.3)}
+.tab-btn:hover:not(.active){border-color:var(--secondary);color:var(--secondary)}
+
+/* ── FORMULA BOX ── */
+.formula-box{background:#0f172a;color:#e2e8f0;border-radius:12px;padding:1.25rem 1.5rem;margin-top:1.25rem;font-family:'Courier New',monospace;font-size:0.82rem;line-height:2;border:1px solid #1e293b;overflow-x:auto}
+.formula-title{color:#93c5fd;font-weight:700;font-size:0.84rem;margin-bottom:0.25rem;font-family:-apple-system,sans-serif}
+.fn{color:#fbbf24}.fc{color:#34d399}.fm{color:#c084fc}.fk{color:#f472b6}
+.formula-divider{border-top:1px solid #1e293b;margin:0.5rem 0;padding-top:0.5rem}
+
+/* ── META BAR ── */
+.meta-bar{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.meta-chip{background:white;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.8rem;font-size:0.76rem;color:var(--muted)}
+.meta-chip strong{color:var(--text)}
+
+/* ── COMPUTE METRICS PANEL ── */
+.compute-panel{background:var(--card);border-radius:12px;border:1px solid var(--border);margin-bottom:1.25rem;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.04)}
+.compute-header{display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1.25rem;cursor:pointer;user-select:none;background:#f8fafc;border-bottom:1px solid var(--border)}
+.compute-header:hover{background:#f1f5f9}
+.compute-header-title{display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;font-weight:700;color:var(--text)}
+.compute-chevron{font-size:0.7rem;color:var(--muted);transition:transform 0.2s}
+.compute-chevron.open{transform:rotate(180deg)}
+.compute-body{padding:1.25rem;display:none}
+.compute-body.open{display:block}
+.compute-sections{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.compute-section-title{font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.75rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)}
+.compute-metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1rem}
+.compute-metric{display:flex;flex-direction:column}
+.compute-metric-label{font-size:0.67rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em}
+.compute-metric-value{font-size:0.92rem;font-weight:800;color:var(--text);font-family:'Courier New',monospace;margin-top:0.1rem}
+.compute-metric-value.good{color:var(--success)}
+.compute-metric-value.warn{color:var(--accent)}
+.compute-metric-value.bad{color:var(--danger)}
+/* Scale table */
+.scale-table-wrap{overflow-x:auto}
+.scale-table{width:100%;border-collapse:collapse;font-size:0.78rem}
+.scale-table th{background:#f1f5f9;padding:0.45rem 0.75rem;text-align:left;font-size:0.67rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid var(--border)}
+.scale-table td{padding:0.45rem 0.75rem;border-bottom:1px solid #f1f5f9;color:var(--text)}
+.scale-table tr:last-child td{border-bottom:none}
+.scale-table tr:hover td{background:#f8fafc}
+.scale-highlight{font-weight:700;color:var(--primary)}
+.compute-note{margin-top:0.75rem;padding:0.65rem 0.9rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:0.78rem;color:#1d4ed8;line-height:1.5}
+
+/* ── FORECAST PANEL ── */
+.forecast-panel{border-radius:14px;border:2px solid #5eead4;background:linear-gradient(135deg,#f0fdfa,#fff);margin-bottom:1.5rem;overflow:hidden;box-shadow:0 4px 14px rgba(13,148,136,0.12)}
+.forecast-header{background:linear-gradient(135deg,#0d9488,#0f766e);color:white;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem}
+.forecast-header-title{font-size:0.95rem;font-weight:700}
+.forecast-header-sub{font-size:0.75rem;opacity:0.85;margin-top:0.15rem}
+.forecast-windy-btn{display:inline-flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:white;text-decoration:none;border-radius:8px;padding:0.4rem 0.9rem;font-size:0.78rem;font-weight:700;transition:all 0.18s}
+.forecast-windy-btn:hover{background:rgba(255,255,255,0.3)}
+.forecast-body{padding:1.25rem}
+.forecast-days-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.75rem;margin-bottom:1rem}
+.forecast-day-card{background:white;border-radius:10px;padding:0.85rem;border:1px solid #ccfbf1;box-shadow:0 1px 4px rgba(0,0,0,0.05)}
+.forecast-day-date{font-size:0.72rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.05em}
+.forecast-day-wmo{font-size:0.75rem;color:var(--muted);margin:0.25rem 0 0.5rem}
+.forecast-day-stat{display:flex;justify-content:space-between;font-size:0.76rem;margin-bottom:0.2rem}
+.forecast-day-stat-label{color:var(--muted)}
+.forecast-day-stat-value{font-weight:700;color:var(--text)}
+.forecast-day-stat-value.precip-high{color:#ef4444}
+.forecast-day-stat-value.precip-mid{color:#f59e0b}
+.forecast-day-stat-value.precip-low{color:#10b981}
+.forecast-disclaimer{font-size:0.75rem;color:#0f766e;background:#ccfbf1;border-radius:8px;padding:0.6rem 0.9rem;margin-bottom:1rem;line-height:1.5}
+
+/* ── TABLE ── */
+.table-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem}
+.table-wrapper{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:480px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:0.8rem;white-space:nowrap}
+thead th{background:#f1f5f9;padding:0.6rem 0.85rem;text-align:left;font-weight:700;color:var(--muted);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em;border-bottom:2px solid var(--border);position:sticky;top:0;z-index:1}
+tbody td{padding:0.5rem 0.85rem;border-bottom:1px solid #f1f5f9;color:var(--text)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f8fafc}
+.badge{display:inline-flex;align-items:center;padding:0.18rem 0.5rem;border-radius:5px;font-size:0.7rem;font-weight:700;font-variant-numeric:tabular-nums}
+.badge-high{background:#fee2e2;color:#dc2626}
+.badge-mid{background:#fef3c7;color:#b45309}
+.badge-low{background:#d1fae5;color:#059669}
+
+@media(max-width:1000px){.charts-row{grid-template-columns:1fr}.risk-hero{grid-template-columns:1fr}.risk-scores{flex-direction:row;flex-wrap:wrap}.compute-sections{grid-template-columns:1fr}}
+@media(max-width:600px){main{padding:1rem}.search-panel{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════════════════ -->
+<header>
+  <div class="logo">
+    <h1>☁️ WeatherMyTrip<span style="opacity:0.6;font-weight:400">.com</span></h1>
+    <p>Historical weather risk · Predictive ECMWF forecast</p>
+  </div>
+
+  <div class="header-controls">
+    <!-- Temperature unit toggle -->
+    <div class="unit-toggle">
+      <button class="unit-btn active" id="btnC" onclick="setUnit('C')">°C</button>
+      <button class="unit-btn"        id="btnF" onclick="setUnit('F')">°F</button>
+    </div>
+    <!-- Windy.com verification link — deep-links to selected location, rain layer -->
+    <a id="windyLink" href="https://www.windy.com/?rain,28.5383,-81.3792,10"
+       target="_blank" rel="noopener" class="windy-btn">
+      <span class="wi">🌬️</span> Verify on Windy.com
+    </a>
+  </div>
+
+  <div class="header-badge">
+    <div style="font-weight:700">MVP v0.4</div>
+    <div style="opacity:0.7">ECMWF · Supabase · Netlify</div>
+  </div>
+</header>
+
+<!-- ══ SEARCH PANEL ═════════════════════════════════════════════════════════ -->
+<div class="search-panel">
+  <div class="form-group">
+    <label>Destination</label>
+    <select id="location" onchange="onLocationChange()">
+      <option value="orlando">Orlando, FL</option>
+      <option value="miami">Miami, FL</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Trip Start</label>
+    <input type="date" id="startDate" value="2026-07-01" onchange="onDateChange()">
+  </div>
+  <div class="form-group">
+    <label>Trip End</label>
+    <input type="date" id="endDate" value="2026-07-14" onchange="onDateChange()">
+  </div>
+  <div class="form-group">
+    <label>Risk Threshold <span id="riskPctLabel" style="font-weight:400;text-transform:none;letter-spacing:0">(60% of trip)</span></label>
+    <input type="number" id="riskDays" value="9" min="1" max="60" style="width:72px" onchange="onParamChange()">
+    <span class="hint">min bad-weather days for P calc</span>
+  </div>
+  <div class="form-group">
+    <label>&nbsp;</label>
+    <button id="analyzeBtn" class="btn btn-primary" onclick="runAnalysis()">🔍 Analyze Risk</button>
+  </div>
+</div>
+
+<main>
+  <div id="errorBanner" class="banner banner-error hidden"><span class="banner-icon">⚠️</span><span id="errorText"></span></div>
+  <div id="infoBanner"  class="banner banner-info  hidden"><span class="banner-icon">ℹ️</span><span id="infoText"></span></div>
+
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p style="font-size:1rem;font-weight:600">Analyzing weather data…</p>
+    <p style="font-size:0.82rem;opacity:0.7;margin-top:0.35rem" id="loadingMsg">Checking Supabase cache…</p>
+  </div>
+
+  <div id="placeholder" class="placeholder">
+    <div class="placeholder-icon">🌤️</div>
+    <h2>Historical Risk · Live Forecast</h2>
+    <p>Choose a destination and travel dates, then click <strong>Analyze Risk</strong>.</p>
+    <p>We analyze 20 years of daily records (recency-weighted), fit statistical distributions, and compute trip-level joint probability. When your trip is within 16 days, we overlay live ECMWF forecast data — the same model used by meteorological agencies worldwide.</p>
+    <p style="margin-top:1rem;font-size:0.8rem;opacity:0.7">Currently supporting: Orlando FL · Miami FL · More cities coming soon</p>
+  </div>
+
+  <div id="results" class="hidden">
+
+    <div class="meta-bar" id="metaBar"></div>
+
+    <!-- COMPUTE METRICS PANEL -->
+    <div class="compute-panel" id="computePanel">
+      <div class="compute-header" onclick="toggleCompute()">
+        <div class="compute-header-title">
+          ⚡ Compute Metrics &amp; Scale Projection
+          <span id="computeSummary" style="font-weight:400;font-size:0.78rem;color:var(--muted)"></span>
+        </div>
+        <span class="compute-chevron" id="computeChevron">▲</span>
+      </div>
+      <div class="compute-body open" id="computeBody">
+        <div class="compute-sections">
+          <!-- Left: this-request metrics -->
+          <div>
+            <div class="compute-section-title">This Request</div>
+            <div class="compute-metrics-grid" id="computeMetricsGrid"></div>
+          </div>
+          <!-- Right: AWS scale projection -->
+          <div>
+            <div class="compute-section-title">AWS Scale Projection</div>
+            <div class="scale-table-wrap">
+              <table class="scale-table" id="scaleTable"></table>
+            </div>
+            <div class="compute-note" id="computeNote"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE FORECAST SECTION (shown only when trip is within 16 days) -->
+    <div id="forecastSection" class="hidden">
+      <div class="forecast-panel">
+        <div class="forecast-header">
+          <div>
+            <div class="forecast-header-title">🔮 Live ECMWF Forecast — Your Actual Trip Dates</div>
+            <div class="forecast-header-sub">Real predicted probabilities · Source: ECMWF IFS via Open-Meteo · Verify on Windy.com (ECMWF layer)</div>
+          </div>
+          <a id="forecastWindyLink" href="#" target="_blank" rel="noopener" class="forecast-windy-btn">
+            🌬️ Open Windy.com
+          </a>
+        </div>
+        <div class="forecast-body">
+          <div class="forecast-disclaimer">
+            <strong>How to read this:</strong> These are actual model-predicted probabilities for your specific travel dates —
+            not historical averages. Precipitation probability is the daily maximum of hourly ECMWF ensemble values.
+            Compare to the historical baseline below. Accuracy is highest within 7 days; 8–16 days is indicative.
+            Cross-check at <a id="forecastWindyLink2" href="#" target="_blank" style="color:#0f766e;font-weight:700">Windy.com</a> (select ECMWF model → Rain layer).
+          </div>
+          <div id="forecastDaysGrid" class="forecast-days-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO: three score boxes + breakdown grid -->
+    <div class="risk-hero card" style="padding:1.25rem;margin-bottom:1.75rem">
+      <div class="risk-scores">
+        <div class="risk-score-box">
+          <div id="jointRiskVal" class="risk-score-value big">--%</div>
+          <div class="risk-score-label">Joint Trip Risk<br>P(≥<span id="kLabel">--</span> bad-weather days)</div>
+          <div id="ratingBadge" class="risk-rating">--</div>
+        </div>
+        <div class="risk-score-box secondary">
+          <div id="heatTripVal" class="risk-score-value">--%</div>
+          <div class="risk-score-label">Temp-Only Trip Risk<br>P(≥<span id="kLabelH">--</span> heat days)</div>
+        </div>
+        <div class="risk-score-box secondary">
+          <div id="wxTripVal" class="risk-score-value">--%</div>
+          <div class="risk-score-label">Weather-Only Trip Risk<br>P(≥<span id="kLabelW">--</span> rain/storm/wind days)</div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:0.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.85rem">Daily Risk Components — Recency-Weighted Historical Average (2005–2024)</div>
+        <div class="risk-grid">
+          <div class="risk-item" style="border-left-color:#ef4444">
+            <div class="risk-item-label">🌡 Heat Risk</div>
+            <div id="rHeat" class="risk-item-value">------</div>
+            <div class="risk-item-sub" id="heatThrLabel">P(max temp &gt; 35°C)</div>
+          </div>
+          <div class="risk-item" style="border-left-color:#3b82f6">
+            <div class="risk-item-label">🌧 Heavy Rain</div>
+            <div id="rRain" class="risk-item-value">------</div>
+            <div class="risk-item-sub">P(precip &gt; 25 mm/day)</div>
+          </div>
+          <div class="risk-item" style="border-left-color:#8b5cf6">
+            <div class="risk-item-label">⛈ Storm Risk</div>
+            <div id="rStorm" class="risk-item-value">------</div>
+            <div class="risk-item-sub">P(thunderstorm WMO 95/96/99)</div>
+          </div>
+          <div class="risk-item" style="border-left-color:#f59e0b">
+            <div class="risk-item-label">💨 Wind Risk</div>
+            <div id="rWind" class="risk-item-value">------</div>
+            <div class="risk-item-sub">P(wind &gt; 50 km/h)</div>
+          </div>
+          <div class="risk-item" style="border-left-color:#10b981">
+            <div class="risk-item-label">📊 Daily Joint Risk</div>
+            <div id="rJoint" class="risk-item-value">------</div>
+            <div class="risk-item-sub">P(any hazard, independence model)</div>
+          </div>
+          <div class="risk-item" style="border-left-color:#94a3b8">
+            <div class="risk-item-label">📅 Trip Days</div>
+            <div id="rDays" class="risk-item-value" style="font-family:inherit;font-size:1.4rem">--</div>
+            <div class="risk-item-sub">days × <span id="rYears">--</span> historical years</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW -->
+    <div class="charts-row">
+      <div class="card">
+        <div class="card-title">🌡️ Temperature Distribution — Historical Percentiles</div>
+        <div class="chart-container"><canvas id="tempChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌧️ Inclement Weather Probability — Daily Risk Curves</div>
+        <div class="chart-container"><canvas id="wxChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- DAILY JOINT RISK -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title">📊 Daily Joint Risk Profile — Hover for full detail</div>
+      <div class="chart-container-sm"><canvas id="riskChart"></canvas></div>
+    </div>
+
+    <!-- PDF SECTION -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title">📈 Probability Distribution Function (PDF)</div>
+      <div class="pdf-tabs">
+        <button class="tab-btn active" data-tab="joint"         onclick="setPDFTab('joint')">Joint Distribution</button>
+        <button class="tab-btn"        data-tab="temperature"   onclick="setPDFTab('temperature')">Temperature</button>
+        <button class="tab-btn"        data-tab="precipitation" onclick="setPDFTab('precipitation')">Precipitation</button>
+        <button class="tab-btn"        data-tab="storm"         onclick="setPDFTab('storm')">Storm / Wind</button>
+      </div>
+      <div class="chart-container-lg"><canvas id="pdfChart"></canvas></div>
+      <div id="formulaBox" class="formula-box"><div class="formula-title">Loading…</div></div>
+    </div>
+
+    <!-- DATA TABLE -->
+    <div class="card">
+      <div class="table-controls">
+        <div style="font-size:0.95rem;font-weight:700">
+          📋 Historical Data Table
+          <span style="font-weight:400;color:var(--muted);font-size:0.8rem">(Metabase-ready · one row per year)</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Date Range</th>
+              <th>Days</th>
+              <th>Recency Wt</th>
+              <th>Avg Temp</th><th>Max Temp</th><th>Min Temp</th>
+              <th>Temp P5</th><th>Temp P50</th><th>Temp P95</th><th>Temp σ</th>
+              <th>Total Precip</th><th>Max Wind</th>
+              <th>Heat Days</th><th>Rain Days</th><th>Storm Days</th><th>Wind Days</th>
+              <th>Avg Joint Risk</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /results -->
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+//  CONSTANTS & CONFIG
+// ═══════════════════════════════════════════════════════════════════════════
+const API_ENDPOINT = '/.netlify/functions/analyze';
+
+const HEAT_THR_C   = 35;   // °C — always stored internally in Celsius
+const RAIN_THR_MM  = 25;   // mm/day
+const WIND_THR_KMH = 50;   // km/h
+const STORM_CODES  = new Set([95, 96, 99]);
+const LAMBDA       = 0.1;  // recency decay
+const RISK_SHARE   = 0.60; // default threshold = 60% of trip days
+
+// Location coordinates for Windy.com deep-links
+const LOCS = {
+  orlando: { lat: 28.5383, lon: -81.3792 },
+  miami:   { lat: 25.7617, lon: -80.1918 },
+};
+
+// WMO weather code descriptions (abbreviated)
+const WMO_DESC = {
+  0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+  45:'Fog',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
+  61:'Slight rain',63:'Rain',65:'Heavy rain',71:'Slight snow',73:'Snow',75:'Heavy snow',
+  77:'Snow grains',80:'Slight showers',81:'Showers',82:'Heavy showers',
+  85:'Slight snow showers',86:'Heavy snow showers',
+  95:'Thunderstorm',96:'Thunderstorm+hail',99:'Heavy thunderstorm+hail',
+};
+
+// ── Unit state ─────────────────────────────────────────────────────────────
+let useFahrenheit = false;
+
+function toDisp(c)     { return useFahrenheit ? c * 9/5 + 32 : c; }
+function sdDisp(s)     { return useFahrenheit ? s * 9/5 : s; }   // scale only, no offset
+function tUnit()       { return useFahrenheit ? '°F' : '°C'; }
+function heatThrDisp() { return useFahrenheit ? '95°F' : '35°C'; }
+
+// ── Global state ───────────────────────────────────────────────────────────
+let charts = {};
+let STATE  = { stats: null, records: [], pdfTab: 'joint', forecast: null };
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  WINDY LINK
+// ═══════════════════════════════════════════════════════════════════════════
+function windyUrl(locKey) {
+  const loc  = LOCS[locKey] || LOCS.orlando;
+  return `https://www.windy.com/?rain,${loc.lat},${loc.lon},10`;
+}
+
+function updateWindyLink() {
+  const loc  = document.getElementById('location').value;
+  const url  = windyUrl(loc);
+  document.getElementById('windyLink').href = url;
+  document.getElementById('forecastWindyLink').href  = url;
+  document.getElementById('forecastWindyLink2').href = url;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  DATE / PARAM HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+function tripDayCount() {
+  const s = document.getElementById('startDate').value;
+  const e = document.getElementById('endDate').value;
+  if (!s || !e) return 0;
+  return Math.max(1, Math.round((new Date(e) - new Date(s)) / 86400000) + 1);
+}
+
+function onDateChange() {
+  const n = tripDayCount();
+  if (n > 0) {
+    document.getElementById('riskDays').value = Math.ceil(n * RISK_SHARE);
+    document.getElementById('riskPctLabel').textContent = `(${Math.round(RISK_SHARE*100)}% of ${n} days)`;
+  }
+  onParamChange();
+}
+
+function onLocationChange() {
+  updateWindyLink();
+  onParamChange();
+}
+
+function onParamChange() {
+  if (STATE.stats) {
+    const riskDays = parseInt(document.getElementById('riskDays').value, 10) || 1;
+    const st       = STATE.stats;
+    st.pTrip     = binomCDF(st.uniqueDays, st.pD,      riskDays);
+    st.pHeatTrip = binomCDF(st.uniqueDays, st.pH,      riskDays);
+    st.pWxTrip   = binomCDF(st.uniqueDays, st.pWxOnly, riskDays);
+    st.riskDays  = riskDays;
+    updateHero(st, riskDays);
+    renderFormula(st, STATE.pdfTab);
+  }
+}
+
+function setUnit(u) {
+  useFahrenheit = (u === 'F');
+  document.getElementById('btnC').classList.toggle('active', !useFahrenheit);
+  document.getElementById('btnF').classList.toggle('active',  useFahrenheit);
+  document.getElementById('heatThrLabel').textContent = `P(max temp > ${heatThrDisp()})`;
+  if (STATE.stats) {
+    renderTempChart(STATE.stats);
+    renderPDFChart(STATE.stats, STATE.pdfTab);
+    renderFormula(STATE.stats, STATE.pdfTab);
+    if (STATE.forecast) renderForecast(STATE.forecast, STATE.stats);
+  }
+}
+
+// ── Init on page load ──────────────────────────────────────────────────────
+(function init() {
+  const n = tripDayCount();
+  if (n > 0) {
+    document.getElementById('riskDays').value = Math.ceil(n * RISK_SHARE);
+    document.getElementById('riskPctLabel').textContent = `(${Math.round(RISK_SHARE*100)}% of ${n} days)`;
+  }
+  updateWindyLink();
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ANALYSIS ENTRY POINT
+// ═══════════════════════════════════════════════════════════════════════════
+async function runAnalysis() {
+  const location  = document.getElementById('location').value;
+  const startVal  = document.getElementById('startDate').value;
+  const endVal    = document.getElementById('endDate').value;
+  const riskDays  = parseInt(document.getElementById('riskDays').value, 10) || 1;
+
+  if (!startVal || !endVal) { showError('Please enter a valid date range.'); return; }
+
+  const [, sm, sd] = startVal.split('-').map(Number);
+  const [, em, ed] = endVal.split('-').map(Number);
+
+  setLoading(true);
+  hideAll();
+
+  // Client-side timing
+  const t0 = performance.now();
+
+  try {
+    const res = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location,
+        startMonth: sm, startDay: sd,
+        endMonth:   em, endDay:   ed,
+        riskDays,
+        startDate: startVal,  // full ISO dates for forecast window detection
+        endDate:   endVal,
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      throw new Error(body.error || `Server error ${res.status}`);
+    }
+
+    const fetchMs = performance.now() - t0;
+
+    const { records: raw, locationName, fromCache, totalCached, forecast, metrics } = await res.json();
+
+    if (!raw || raw.length === 0) throw new Error('No historical data matched that date range.');
+
+    // Client-side compute timing
+    const tCompute = performance.now();
+    const recs  = processRecords(raw);
+    const stats = computeStats(recs, riskDays);
+    const computeMs = performance.now() - tCompute;
+
+    STATE.stats    = stats;
+    STATE.records  = recs;
+    STATE.forecast = forecast || null;
+
+    // Render timing
+    const tRender = performance.now();
+    renderAll(stats, location, locationName, sm, sd, em, ed, riskDays, fromCache, totalCached, forecast);
+    const renderMs = performance.now() - tRender;
+
+    // Populate compute panel
+    const clientMetrics = {
+      fetchMs:    Math.round(fetchMs),
+      computeMs:  Math.round(computeMs),
+      renderMs:   Math.round(renderMs),
+      totalMs:    Math.round(performance.now() - t0),
+      networkMs:  Math.round(fetchMs - (metrics?.serverMs || 0)),
+    };
+    renderComputePanel(metrics || {}, clientMetrics);
+
+    setLoading(false);
+    show('results');
+
+    if (!fromCache) showInfo(`First-time fetch — ${(totalCached||0).toLocaleString()} rows cached in Supabase for ${locationName}. Future queries load instantly.`);
+
+  } catch (e) {
+    setLoading(false);
+    show('placeholder');
+    showError(e.message);
+    console.error('[WeatherMyTrip]', e);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  RECORD PROCESSING
+// ═══════════════════════════════════════════════════════════════════════════
+function processRecords(raw) {
+  const cy = new Date().getFullYear();
+  return raw.map(r => {
+    const isHeat  = r.tMax  != null && r.tMax  > HEAT_THR_C;
+    const isRain  = (r.prec ?? 0)  > RAIN_THR_MM;
+    const isStorm = STORM_CODES.has(r.wCode ?? 0);
+    const isWind  = (r.wind ?? 0)  > WIND_THR_KMH;
+    const isWx    = isRain || isStorm || isWind;
+    const pGood   = (1-(isHeat?1:0))*(1-(isRain?1:0))*(1-(isStorm?1:0))*(1-(isWind?1:0));
+    const weight  = Math.exp(-LAMBDA * (cy - r.yr));
+    return { ...r, weight, isHeat, isRain, isStorm, isWind, isWx, jointRisk: 1 - pGood };
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  STATISTICS ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
+function computeStats(recs, riskDays) {
+  const W    = recs.reduce((s, r) => s + r.weight, 0);
+  const wsum = k => recs.reduce((s, r) => s + (r[k] ? r.weight : 0), 0);
+
+  const pH      = wsum('isHeat')  / W;
+  const pR      = wsum('isRain')  / W;
+  const pS      = wsum('isStorm') / W;
+  const pW      = wsum('isWind')  / W;
+  const pWxOnly = wsum('isWx')    / W;
+  const pD      = 1 - (1-pH)*(1-pR)*(1-pS)*(1-pW);
+
+  const uniqueDays = new Set(recs.map(r => `${r.mo}-${r.dy}`)).size;
+  const pTrip      = binomCDF(uniqueDays, pD,      riskDays);
+  const pHeatTrip  = binomCDF(uniqueDays, pH,      riskDays);
+  const pWxTrip    = binomCDF(uniqueDays, pWxOnly, riskDays);
+
+  const temps  = recs.filter(r => r.tMean != null).map(r => r.tMean);
+  const tempWs = recs.filter(r => r.tMean != null).map(r => r.weight);
+  const mu     = wMean(temps, tempWs);
+  const sigma  = Math.sqrt(wVar(temps, tempWs, mu));
+
+  const wetR  = recs.filter(r => r.prec > 0);
+  const pVals = wetR.map(r => r.prec);
+  const pWts  = wetR.map(r => r.weight);
+  let gamA = 1, gamB = 1;
+  if (pVals.length > 5) {
+    const pm = wMean(pVals, pWts), pv = wVar(pVals, pWts, pm);
+    gamA = pm*pm/pv; gamB = pv/pm;
+  }
+
+  return {
+    pH, pR, pS, pW, pWxOnly, pD, pTrip, pHeatTrip, pWxTrip,
+    riskDays, uniqueDays,
+    mu, sigma,
+    tP5:  wPct(temps, tempWs, 0.05),
+    tP50: wPct(temps, tempWs, 0.50),
+    tP95: wPct(temps, tempWs, 0.95),
+    gamA, gamB,
+    dayStats:  buildDayStats(recs),
+    yearRows:  buildYearRows(recs),
+    years:     new Set(recs.map(r => r.yr)).size,
+    totalRecs: recs.length,
+  };
+}
+
+function buildDayStats(recs) {
+  const grp = {};
+  recs.forEach(r => { const k = `${pad(r.mo)}-${pad(r.dy)}`; (grp[k] ??= []).push(r); });
+  return Object.entries(grp).sort((a,b) => a[0] < b[0] ? -1 : 1).map(([date, rs]) => {
+    const W  = rs.reduce((s,r) => s + r.weight, 0);
+    const ts = rs.filter(r => r.tMean != null).map(r => r.tMean);
+    const tw = rs.filter(r => r.tMean != null).map(r => r.weight);
+    const mu = ts.length ? wMean(ts, tw) : NaN;
+    return {
+      date,
+      tP5:  ts.length ? wPct(ts, tw, 0.05) : NaN,
+      tP50: ts.length ? wPct(ts, tw, 0.50) : NaN,
+      tP95: ts.length ? wPct(ts, tw, 0.95) : NaN,
+      tStd: ts.length ? Math.sqrt(wVar(ts, tw, mu)) : NaN,
+      pH:   rs.reduce((s,r) => s + (r.isHeat  ? r.weight : 0), 0) / W,
+      pR:   rs.reduce((s,r) => s + (r.isRain  ? r.weight : 0), 0) / W,
+      pS:   rs.reduce((s,r) => s + (r.isStorm ? r.weight : 0), 0) / W,
+      pW:   rs.reduce((s,r) => s + (r.isWind  ? r.weight : 0), 0) / W,
+      pJ:   rs.reduce((s,r) => s + r.jointRisk * r.weight, 0) / W,
+      avgPrec: wMean(rs.map(r => r.prec), rs.map(r => r.weight)),
+    };
+  });
+}
+
+function buildYearRows(recs) {
+  const byYr = {};
+  recs.forEach(r => { (byYr[r.yr] ??= []).push(r); });
+  const cy = new Date().getFullYear();
+  return Object.entries(byYr).sort((a,b) => +b[0] - +a[0]).map(([yr, rs]) => {
+    const W  = rs.reduce((s,r) => s + r.weight, 0);
+    const ts = rs.filter(r => r.tMean != null).map(r => r.tMean);
+    const tw = rs.filter(r => r.tMean != null).map(r => r.weight);
+    const mu = ts.length ? wMean(ts, tw) : NaN;
+    const sd = ts.length ? Math.sqrt(wVar(ts, tw, mu)) : NaN;
+    const sortedDates = rs.map(r => r.date).sort();
+    const dateRange   = `${fmtShortDate(sortedDates[0])} – ${fmtShortDate(sortedDates[sortedDates.length-1])}`;
+    return {
+      yr: +yr, dateRange, days: rs.length,
+      weight: Math.exp(-LAMBDA * (cy - yr)),
+      avgT: mu, sd,
+      maxT: Math.max(...rs.filter(r => r.tMax != null).map(r => r.tMax)),
+      minT: Math.min(...rs.filter(r => r.tMin != null).map(r => r.tMin)),
+      tP5:  ts.length ? wPct(ts, tw, 0.05) : NaN,
+      tP50: ts.length ? wPct(ts, tw, 0.50) : NaN,
+      tP95: ts.length ? wPct(ts, tw, 0.95) : NaN,
+      prec: rs.reduce((s,r) => s + r.prec, 0),
+      wind: Math.max(...rs.filter(r => r.wind != null).map(r => r.wind)),
+      nHeat:  rs.filter(r => r.isHeat).length,
+      nRain:  rs.filter(r => r.isRain).length,
+      nStorm: rs.filter(r => r.isStorm).length,
+      nWind:  rs.filter(r => r.isWind).length,
+      avgJR:  rs.reduce((s,r) => s + r.jointRisk * r.weight, 0) / W,
+    };
+  });
+}
+
+function fmtShortDate(dateStr) {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const [, mo, dy] = dateStr.split('-').map(Number);
+  return `${months[mo-1]} ${String(dy).padStart(2,'0')}`;
+}
+
+// ── Math ───────────────────────────────────────────────────────────────────
+function wMean(v,w){const W=w.reduce((s,x)=>s+x,0);return v.reduce((s,x,i)=>s+x*w[i],0)/W}
+function wVar(v,w,mu){const W=w.reduce((s,x)=>s+x,0);return v.reduce((s,x,i)=>s+w[i]*(x-mu)**2,0)/W}
+function wPct(v,w,p){
+  const pairs=v.map((x,i)=>({x,w:w[i]})).filter(d=>!isNaN(d.x)).sort((a,b)=>a.x-b.x);
+  const W=pairs.reduce((s,d)=>s+d.w,0),tgt=p*W;let cum=0;
+  for(const d of pairs){cum+=d.w;if(cum>=tgt)return d.x;}
+  return pairs.at(-1)?.x??NaN;
+}
+function logC(n,k){let r=0;k=Math.min(k,n-k);for(let i=0;i<k;i++)r+=Math.log(n-i)-Math.log(i+1);return r}
+function binomPMF(n,p,k){if(p<=0)return k===0?1:0;if(p>=1)return k===n?1:0;return Math.exp(logC(n,k)+k*Math.log(p)+(n-k)*Math.log(1-p))}
+function binomCDF(n,p,k){let s=0;for(let i=0;i<k;i++)s+=binomPMF(n,p,i);return 1-s}
+function normalPDF(x,mu,sig){return Math.exp(-0.5*((x-mu)/sig)**2)/(sig*Math.sqrt(2*Math.PI))}
+function normalCDF(x,mu,sig){return 0.5*(1+erf((x-mu)/(sig*Math.sqrt(2))))}
+function erf(z){const t=1/(1+0.5*Math.abs(z));const tau=t*Math.exp(-z*z-1.26551223+t*(1.00002368+t*(0.37409196+t*(0.09678418+t*(-0.18628806+t*(0.27886807+t*(-1.13520398+t*(1.48851587+t*(-0.82215223+t*0.17087294)))))))));return z>=0?1-tau:tau-1}
+function gammaPDF(x,a,b){if(x<=0)return 0;return Math.pow(x,a-1)*Math.exp(-x/b)/(Math.pow(b,a)*gammaFn(a))}
+function gammaFn(n){if(n<0.5)return Math.PI/(Math.sin(Math.PI*n)*gammaFn(1-n));n-=1;const g=7,c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];let x=c[0];for(let i=1;i<g+2;i++)x+=c[i]/(n+i);const t=n+g+0.5;return Math.sqrt(2*Math.PI)*Math.pow(t,n+0.5)*Math.exp(-t)*x}
+function linspace(a,b,n){const s=(b-a)/(n-1);return Array.from({length:n},(_,i)=>a+i*s)}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  RENDER — MASTER
+// ═══════════════════════════════════════════════════════════════════════════
+function renderAll(st, location, locationName, sm, sd, em, ed, riskDays, fromCache, totalCached, forecast) {
+  document.getElementById('metaBar').innerHTML = [
+    `<span class="meta-chip">📍 <strong>${locationName}</strong></span>`,
+    `<span class="meta-chip">📅 <strong>${pad(sm)}/${pad(sd)} → ${pad(em)}/${pad(ed)}</strong></span>`,
+    `<span class="meta-chip">📊 <strong>${st.years} years</strong> (2005–2024)</span>`,
+    `<span class="meta-chip">⚖️ Recency λ = ${LAMBDA}</span>`,
+    `<span class="meta-chip">🗄 ${(totalCached||0).toLocaleString()} rows cached</span>`,
+    fromCache
+      ? `<span class="meta-chip" style="border-color:#bbf7d0;color:#059669">✅ Supabase cache hit</span>`
+      : `<span class="meta-chip" style="border-color:#fde68a;color:#b45309">🔄 Cache populated</span>`,
+  ].join('');
+
+  updateHero(st, riskDays);
+  renderTempChart(st);
+  renderWxChart(st);
+  renderRiskChart(st);
+  renderPDFChart(st, STATE.pdfTab);
+  renderFormula(st, STATE.pdfTab);
+  renderTable(st);
+  renderForecast(forecast, st);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  COMPUTE METRICS PANEL
+// ═══════════════════════════════════════════════════════════════════════════
+function toggleCompute() {
+  const body    = document.getElementById('computeBody');
+  const chevron = document.getElementById('computeChevron');
+  const open    = body.classList.toggle('open');
+  chevron.textContent = open ? '▲' : '▼';
+  chevron.classList.toggle('open', open);
+}
+
+function renderComputePanel(srv, cli) {
+  // ── This-request metrics grid
+  const cacheColor = srv.cacheHit ? 'good' : 'warn';
+  document.getElementById('computeSummary').textContent =
+    `— ${cli.totalMs}ms total · ${srv.cacheHit ? 'cache hit' : 'cache miss'} · ${((srv.approxResponseBytes||0)/1024).toFixed(1)} KB`;
+
+  document.getElementById('computeMetricsGrid').innerHTML = [
+    metric('Total round-trip',   `${cli.totalMs} ms`,     cli.totalMs < 500 ? 'good' : cli.totalMs < 2000 ? 'warn' : 'bad'),
+    metric('Network RTT (est.)', `${Math.max(0, cli.networkMs)} ms`, ''),
+    metric('Server compute',     `${srv.serverMs || '?'} ms`,        ''),
+    metric('DB cache check',     `${srv.cacheCheckMs || '?'} ms`,    ''),
+    metric('Supabase query',     `${srv.queryMs || '?'} ms`,         ''),
+    metric('Forecast fetch',     srv.hasForecast ? `${srv.forecastMs} ms (${srv.forecastDays}d)` : 'N/A (outside window)', ''),
+    metric('Client JS compute',  `${cli.computeMs} ms`,  ''),
+    metric('Chart render',       `${cli.renderMs} ms`,   ''),
+    metric('Cache status',       srv.cacheHit ? '✅ HIT' : '⚠️ MISS (populated)', cacheColor),
+    metric('Rows fetched',       `${(srv.rowsFetched||0).toLocaleString()} (all loc.)`,   ''),
+    metric('Rows filtered',      `${(srv.rowsFiltered||0).toLocaleString()} (date window)`, ''),
+    metric('Response payload',   `${((srv.approxResponseBytes||0)/1024).toFixed(1)} KB`,   ''),
+  ].join('');
+
+  // ── AWS scale projection table
+  const KB       = (srv.approxResponseBytes || 365000) / 1024;
+  const srvMs    = srv.serverMs || 150;
+
+  // AWS Lambda (256MB): $0.0000166667/GB-s + $0.20/1M requests
+  // API Gateway HTTP:   $1.00/1M requests
+  // Supabase Pro:       8 GB bandwidth free, then $0.09/GB; $25/mo base
+  function scaleRow(label, dPerDay) {
+    const mo         = dPerDay * 30;
+    const gbMo       = (dPerDay * KB) / (1024 * 1024) * 30;
+    const lambdaGbs  = (srvMs / 1000) * (256 / 1024) * mo;
+    const lambdaCost = lambdaGbs * 0.0000166667 + mo * 0.0000002;
+    const agCost     = mo * 0.000001;
+    const supaOver   = Math.max(0, gbMo - 8);
+    const supaCost   = supaOver * 0.09 + 25;
+    const total      = lambdaCost + agCost + supaCost;
+    return `<tr>
+      <td class="scale-highlight">${label}</td>
+      <td>${(mo/1000).toFixed(0)}K/mo</td>
+      <td>${gbMo.toFixed(1)} GB/mo</td>
+      <td>$${lambdaCost.toFixed(2)}</td>
+      <td>$${supaCost.toFixed(0)}</td>
+      <td class="scale-highlight">~$${total.toFixed(0)}/mo</td>
+    </tr>`;
+  }
+
+  document.getElementById('scaleTable').innerHTML = `
+    <thead><tr>
+      <th>Scale</th><th>Invocations</th><th>DB Egress</th>
+      <th>Lambda+AG</th><th>Supabase*</th><th>Est. Total</th>
+    </tr></thead>
+    <tbody>
+      ${scaleRow('1K / day',   1000)}
+      ${scaleRow('10K / day',  10000)}
+      ${scaleRow('100K / day', 100000)}
+    </tbody>`;
+
+  document.getElementById('computeNote').innerHTML =
+    `<strong>* Supabase egress dominates at scale</strong> (~${KB.toFixed(0)} KB per request × all calls).
+    Since only ${Object.keys(LOCS).length} locations exist right now, a <strong>CloudFront cache</strong> in front of Lambda
+    (cache key: location + date range, TTL 24h) would cut DB reads by ~99%, reducing Supabase cost to near zero.
+    At 100K/day with CDN: CloudFront bandwidth ≈ <strong>$95/mo total</strong> vs ~$500+/mo direct.
+    Lambda compute stays <strong>under $5/mo</strong> at all projected scales.`;
+}
+
+function metric(label, value, cls) {
+  return `<div class="compute-metric">
+    <div class="compute-metric-label">${label}</div>
+    <div class="compute-metric-value ${cls}">${value}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIVE FORECAST SECTION
+// ═══════════════════════════════════════════════════════════════════════════
+function renderForecast(forecast, st) {
+  const sec = document.getElementById('forecastSection');
+  if (!forecast || forecast.length === 0) { sec.classList.add('hidden'); return; }
+
+  sec.classList.remove('hidden');
+  const u = tUnit();
+
+  // Build lookup of historical day-stats by MM-DD for comparison
+  const histLookup = {};
+  (st?.dayStats || []).forEach(d => { histLookup[d.date] = d; });
+
+  document.getElementById('forecastDaysGrid').innerHTML = forecast.map(day => {
+    const mmdd       = day.date.slice(5);                       // "07-01"
+    const hist       = histLookup[mmdd];
+    const pPrecip    = day.precipProbPct;
+    const wmo        = WMO_DESC[day.weatherCode] || `WMO ${day.weatherCode ?? '?'}`;
+    const tMax       = day.tempMaxC != null ? `${toDisp(day.tempMaxC).toFixed(1)}${u}` : 'N/A';
+    const tMin       = day.tempMinC != null ? `${toDisp(day.tempMinC).toFixed(1)}${u}` : 'N/A';
+    const wind       = day.windGustKmh != null ? `${day.windGustKmh.toFixed(0)} km/h` : 'N/A';
+    const isHighWind = (day.windGustKmh || 0) > WIND_THR_KMH;
+    const isHotDay   = (day.tempMaxC   || 0) > HEAT_THR_C;
+    const precipCls  = pPrecip == null ? '' : pPrecip >= 60 ? 'precip-high' : pPrecip >= 30 ? 'precip-mid' : 'precip-low';
+    const precipStr  = pPrecip != null ? `${pPrecip}%` : 'N/A';
+    const dateLabel  = new Date(day.date + 'T12:00:00').toLocaleDateString('en-US',
+      { weekday:'short', month:'short', day:'numeric' });
+    const histNote   = hist ? `Hist: ${(hist.pR*100).toFixed(0)}% rain avg` : '';
+
+    return `<div class="forecast-day-card">
+      <div class="forecast-day-date">${dateLabel}</div>
+      <div class="forecast-day-wmo">${wmo}</div>
+      <div class="forecast-day-stat">
+        <span class="forecast-day-stat-label">🌧 Precip prob</span>
+        <span class="forecast-day-stat-value ${precipCls}">${precipStr}</span>
+      </div>
+      <div class="forecast-day-stat">
+        <span class="forecast-day-stat-label">🌡 High / Low</span>
+        <span class="forecast-day-stat-value${isHotDay ? ' precip-high' : ''}">${tMax} / ${tMin}</span>
+      </div>
+      <div class="forecast-day-stat">
+        <span class="forecast-day-stat-label">💨 Wind gust</span>
+        <span class="forecast-day-stat-value${isHighWind ? ' precip-high' : ''}">${wind}</span>
+      </div>
+      ${histNote ? `<div style="font-size:0.67rem;color:#0f766e;margin-top:0.35rem;border-top:1px solid #ccfbf1;padding-top:0.3rem">${histNote}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  HERO
+// ═══════════════════════════════════════════════════════════════════════════
+function updateHero(st, riskDays) {
+  // Big score boxes — 8 decimal places
+  document.getElementById('jointRiskVal').textContent = fmt8(st.pTrip);
+  document.getElementById('heatTripVal').textContent  = fmt8(st.pHeatTrip);
+  document.getElementById('wxTripVal').textContent    = fmt8(st.pWxTrip);
+  document.getElementById('kLabel').textContent  = riskDays;
+  document.getElementById('kLabelH').textContent = riskDays;
+  document.getElementById('kLabelW').textContent = riskDays;
+
+  // Grid items — 6 decimal places
+  document.getElementById('rHeat').textContent  = fmt6(st.pH);
+  document.getElementById('rRain').textContent  = fmt6(st.pR);
+  document.getElementById('rStorm').textContent = fmt6(st.pS);
+  document.getElementById('rWind').textContent  = fmt6(st.pW);
+  document.getElementById('rJoint').textContent = fmt6(st.pD);
+  document.getElementById('rDays').textContent  = st.uniqueDays;
+  document.getElementById('rYears').textContent = st.years;
+  document.getElementById('heatThrLabel').textContent = `P(max temp > ${heatThrDisp()})`;
+
+  const rating   = st.pTrip >= 0.6 ? 'HIGH RISK' : st.pTrip >= 0.3 ? 'MODERATE RISK' : 'LOW RISK';
+  const ratingEl = document.getElementById('ratingBadge');
+  ratingEl.textContent  = rating;
+  ratingEl.style.background = st.pTrip >= 0.6 ? 'rgba(239,68,68,0.35)'
+    : st.pTrip >= 0.3 ? 'rgba(245,158,11,0.35)' : 'rgba(16,185,129,0.35)';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  TEMPERATURE CHART
+// ═══════════════════════════════════════════════════════════════════════════
+function renderTempChart(st) {
+  destroyChart('temp');
+  const ds = st.dayStats;
+  const u  = tUnit();
+  const cv = c => +toDisp(c).toFixed(1);
+  charts.temp = new Chart(document.getElementById('tempChart'), {
+    type: 'line',
+    data: {
+      labels: ds.map(d => d.date),
+      datasets: [
+        { label:'P95',          data:ds.map(d=>cv(d.tP95)),          borderColor:'#ef4444', borderWidth:1.5, borderDash:[4,3], fill:false,  tension:0.35, pointRadius:0 },
+        { label:'+1σ',          data:ds.map(d=>cv(d.tP50+d.tStd)),   borderColor:'transparent', backgroundColor:'rgba(100,116,139,0.15)', fill:'+1', tension:0.35, pointRadius:0 },
+        { label:'Median (P50)', data:ds.map(d=>cv(d.tP50)),          borderColor:'#f59e0b', borderWidth:2.5, fill:false, tension:0.35, pointRadius:0 },
+        { label:'−1σ',          data:ds.map(d=>cv(d.tP50-d.tStd)),   borderColor:'transparent', backgroundColor:'rgba(100,116,139,0.15)', fill:'-1', tension:0.35, pointRadius:0 },
+        { label:'P5',           data:ds.map(d=>cv(d.tP5)),           borderColor:'#3b82f6', borderWidth:1.5, borderDash:[4,3], fill:false,  tension:0.35, pointRadius:0 },
+      ],
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:true, position:'top', labels:{ usePointStyle:true, pointStyleWidth:10, font:{size:11} } },
+        tooltip:{ callbacks:{ label: c => (c.dataset.label==='+1σ'||c.dataset.label==='−1σ') ? null : `${c.dataset.label}: ${c.parsed.y}${u}` } },
+      },
+      scales:{
+        x:{ ticks:{ maxTicksLimit:8, font:{size:10} }, grid:{ color:'#f1f5f9' } },
+        y:{ title:{ display:true, text:`Temperature (${u})`, font:{size:11} }, ticks:{ callback:v=>v+u, font:{size:10} }, grid:{ color:'#f1f5f9' } },
+      },
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  INCLEMENT WEATHER CHART (smooth gradient area curves)
+// ═══════════════════════════════════════════════════════════════════════════
+function renderWxChart(st) {
+  destroyChart('wx');
+  const ds     = st.dayStats;
+  const canvas = document.getElementById('wxChart');
+  const ctx2d  = canvas.getContext('2d');
+  const h      = canvas.parentElement.clientHeight || 290;
+  function mkGrad(r,g,b) {
+    const grad = ctx2d.createLinearGradient(0,0,0,h);
+    grad.addColorStop(0,`rgba(${r},${g},${b},0.45)`);
+    grad.addColorStop(1,`rgba(${r},${g},${b},0.02)`);
+    return grad;
+  }
+  charts.wx = new Chart(canvas, {
+    type:'line',
+    data:{
+      labels: ds.map(d=>d.date),
+      datasets:[
+        { label:'Extreme Heat', data:ds.map(d=>+(d.pH*100).toFixed(2)), borderColor:'#ef4444', backgroundColor:mkGrad(239,68,68),  fill:'origin', tension:0.45, pointRadius:3, pointHoverRadius:6, borderWidth:2, pointBackgroundColor:'#ef4444', pointBorderColor:'#fff', pointBorderWidth:1.5 },
+        { label:'Heavy Rain',   data:ds.map(d=>+(d.pR*100).toFixed(2)), borderColor:'#3b82f6', backgroundColor:mkGrad(59,130,246),  fill:'origin', tension:0.45, pointRadius:3, pointHoverRadius:6, borderWidth:2, pointBackgroundColor:'#3b82f6', pointBorderColor:'#fff', pointBorderWidth:1.5 },
+        { label:'Thunderstorm', data:ds.map(d=>+(d.pS*100).toFixed(2)), borderColor:'#8b5cf6', backgroundColor:mkGrad(139,92,246),  fill:'origin', tension:0.45, pointRadius:3, pointHoverRadius:6, borderWidth:2, pointBackgroundColor:'#8b5cf6', pointBorderColor:'#fff', pointBorderWidth:1.5 },
+        { label:'High Wind',    data:ds.map(d=>+(d.pW*100).toFixed(2)), borderColor:'#f59e0b', backgroundColor:mkGrad(245,158,11),  fill:'origin', tension:0.45, pointRadius:3, pointHoverRadius:6, borderWidth:2, pointBackgroundColor:'#f59e0b', pointBorderColor:'#fff', pointBorderWidth:1.5 },
+      ],
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:true, position:'top', labels:{ usePointStyle:true, pointStyle:'circle', font:{size:11} } },
+        tooltip:{ callbacks:{ label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } },
+      },
+      scales:{
+        x:{ ticks:{ maxTicksLimit:8, font:{size:10} }, grid:{ color:'#f1f5f9' } },
+        y:{ title:{ display:true, text:'Daily Probability (%)', font:{size:11} }, ticks:{ callback:v=>v+'%', font:{size:10} }, min:0, max:100, grid:{ color:'#f1f5f9' } },
+      },
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  DAILY JOINT RISK CHART (rich tooltip)
+// ═══════════════════════════════════════════════════════════════════════════
+function renderRiskChart(st) {
+  destroyChart('risk');
+  const ds = st.dayStats;
+  charts.risk = new Chart(document.getElementById('riskChart'), {
+    type:'line',
+    data:{
+      labels: ds.map(d=>d.date),
+      datasets:[{
+        label:'Daily Joint Risk',
+        data: ds.map(d=>+(d.pJ*100).toFixed(4)),
+        borderColor:'#ef4444', borderWidth:2,
+        backgroundColor:'rgba(239,68,68,0.1)', fill:true,
+        tension:0.4, pointRadius:4, pointHoverRadius:7,
+        pointBackgroundColor:'#ef4444', pointBorderColor:'#fff', pointBorderWidth:2,
+      }],
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          backgroundColor:'rgba(15,23,42,0.95)', titleColor:'#93c5fd', bodyColor:'#e2e8f0',
+          padding:12, cornerRadius:10,
+          titleFont:{ size:12, weight:'bold' }, bodyFont:{ size:11, family:'Courier New' },
+          callbacks:{
+            title: items => `📅  ${items[0].label}`,
+            label: () => '',
+            afterLabel: item => {
+              const d = STATE.stats?.dayStats?.[item.dataIndex];
+              if (!d) return [];
+              const fT = c => isNaN(c) ? 'N/A' : `${toDisp(c).toFixed(1)}${tUnit()}`;
+              return [
+                `━━━━━━━━━━━━━━━━━━━━━━━━`,
+                `⚡ Joint Risk:       ${(d.pJ*100).toFixed(3)}%`,
+                ``,
+                `🌡 Heat Risk:        ${(d.pH*100).toFixed(2)}%  P(T > ${heatThrDisp()})`,
+                `🌧 Rain Risk:        ${(d.pR*100).toFixed(2)}%  P(precip > 25mm)`,
+                `⛈ Storm Risk:       ${(d.pS*100).toFixed(2)}%  P(WMO 95/96/99)`,
+                `💨 Wind Risk:        ${(d.pW*100).toFixed(2)}%  P(wind > 50 km/h)`,
+                ``,
+                `🌡 Temperature Percentiles`,
+                `   P5  = ${fT(d.tP5)}`,
+                `   P50 = ${fT(d.tP50)}   (median)`,
+                `   P95 = ${fT(d.tP95)}`,
+                `   σ   = ${fT(d.tStd)}   (std dev)`,
+                ``,
+                `🌦 Avg precip:       ${isNaN(d.avgPrec)?'N/A':d.avgPrec.toFixed(1)} mm`,
+              ];
+            },
+          },
+        },
+      },
+      scales:{
+        x:{ ticks:{ maxTicksLimit:10, font:{size:10} }, grid:{ color:'#f1f5f9' } },
+        y:{ title:{ display:true, text:'Risk Probability (%)', font:{size:11} }, ticks:{ callback:v=>v+'%', font:{size:10} }, min:0, max:100, grid:{ color:'#f1f5f9' } },
+      },
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PDF CHART
+// ═══════════════════════════════════════════════════════════════════════════
+function setPDFTab(tab) {
+  STATE.pdfTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  if (STATE.stats) { renderPDFChart(STATE.stats, tab); renderFormula(STATE.stats, tab); }
+}
+
+function renderPDFChart(st, tab) {
+  destroyChart('pdf');
+  const ctx = document.getElementById('pdfChart');
+  const u   = tUnit();
+
+  if (tab === 'temperature') {
+    const muD=toDisp(st.mu), sigD=sdDisp(st.sigma);
+    const xs=linspace(muD-4*sigD, muD+4*sigD, 300);
+    charts.pdf = new Chart(ctx,{ type:'line',
+      data:{ datasets:[{ label:`Normal(μ=${muD.toFixed(1)}${u}, σ=${sigD.toFixed(2)}${u})`,
+        data:xs.map(x=>({x,y:normalPDF(x,muD,sigD)})),
+        borderColor:'#f59e0b', borderWidth:2, backgroundColor:'rgba(245,158,11,0.15)', fill:true, tension:0.4, pointRadius:0 }]},
+      options:pdfOpts(`Temperature (${u})`,'Probability Density') });
+
+  } else if (tab === 'precipitation') {
+    const xMax=Math.max(st.gamA*st.gamB*4,80), xs=linspace(0.05,xMax,300);
+    charts.pdf = new Chart(ctx,{ type:'line',
+      data:{ datasets:[{ label:`Gamma(α=${st.gamA.toFixed(2)}, β=${st.gamB.toFixed(2)} mm)`,
+        data:xs.map(x=>({x,y:gammaPDF(x,st.gamA,st.gamB)})),
+        borderColor:'#3b82f6', borderWidth:2, backgroundColor:'rgba(59,130,246,0.15)', fill:true, tension:0.4, pointRadius:0 }]},
+      options:pdfOpts('Daily Precipitation (mm)','Probability Density') });
+
+  } else if (tab === 'storm') {
+    charts.pdf = new Chart(ctx,{ type:'bar',
+      data:{ labels:['No Storm','Storm\n(WMO 95/96/99)','No High Wind','High Wind\n(>50 km/h)'],
+        datasets:[{ label:'Bernoulli',
+          data:[+((1-st.pS)*100).toFixed(3),+(st.pS*100).toFixed(3),+((1-st.pW)*100).toFixed(3),+(st.pW*100).toFixed(3)],
+          backgroundColor:['rgba(16,185,129,0.7)','rgba(139,92,246,0.7)','rgba(16,185,129,0.55)','rgba(245,158,11,0.7)'],
+          borderColor:['#10b981','#8b5cf6','#10b981','#f59e0b'], borderWidth:2, borderRadius:8 }] },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>`P = ${c.parsed.y.toFixed(3)}%` } } },
+        scales:{ y:{ title:{ display:true, text:'Probability (%)' }, ticks:{ callback:v=>v+'%' }, max:100 } } } });
+
+  } else { // joint
+    const muD=toDisp(st.mu), sigD=sdDisp(st.sigma), hThr=toDisp(HEAT_THR_C);
+    const xs=linspace(muD-3.5*sigD, muD+3.5*sigD, 300);
+    charts.pdf = new Chart(ctx,{ type:'line',
+      data:{ datasets:[
+        { label:`Temp PDF — Normal(${muD.toFixed(1)}, ${sigD.toFixed(2)}) ${u}`,
+          data:xs.map(x=>({x,y:normalPDF(x,muD,sigD)})),
+          borderColor:'#f59e0b', borderWidth:1.8, backgroundColor:'rgba(245,158,11,0.12)', fill:true, tension:0.4, pointRadius:0, yAxisID:'y' },
+        { label:`Conditional Joint Risk (step at ${heatThrDisp()})`,
+          data:xs.map(x=>({x,y:(1-(1-(x>hThr?1:0))*(1-st.pR)*(1-st.pS)*(1-st.pW))*100})),
+          borderColor:'#ef4444', borderWidth:2, fill:false, tension:0.1, pointRadius:0, yAxisID:'y1' },
+      ]},
+      options:{
+        responsive:true, maintainAspectRatio:false, parsing:{xAxisKey:'x',yAxisKey:'y'},
+        interaction:{ mode:'index', intersect:false },
+        plugins:{ legend:{ display:true, position:'top', labels:{ usePointStyle:true, font:{size:11} } } },
+        scales:{
+          x:{ type:'linear', title:{ display:true, text:`Daily Mean Temp (${u})` }, ticks:{ font:{size:10} } },
+          y:{ type:'linear', position:'left', title:{ display:true, text:'Probability Density' }, ticks:{ font:{size:10} } },
+          y1:{ type:'linear', position:'right', title:{ display:true, text:'Joint Risk (%)' },
+            ticks:{ callback:v=>v+'%', font:{size:10} }, grid:{ drawOnChartArea:false }, max:100 },
+        },
+      } });
+  }
+}
+
+function pdfOpts(xLabel, yLabel) {
+  return {
+    responsive:true, maintainAspectRatio:false, parsing:{ xAxisKey:'x', yAxisKey:'y' },
+    interaction:{ mode:'index', intersect:false },
+    plugins:{ legend:{ display:true, position:'top', labels:{ usePointStyle:true, font:{size:11} } } },
+    scales:{
+      x:{ type:'linear', title:{ display:true, text:xLabel }, ticks:{ font:{size:10} }, grid:{ color:'#f1f5f9' } },
+      y:{ title:{ display:true, text:yLabel }, ticks:{ font:{size:10} }, grid:{ color:'#f1f5f9' } },
+    },
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  FORMULA BOX
+// ═══════════════════════════════════════════════════════════════════════════
+function renderFormula(st, tab) {
+  const box = document.getElementById('formulaBox');
+  if (!st) return;
+  const { mu, sigma, gamA, gamB, pH, pR, pS, pW, pD, pTrip, pHeatTrip, pWxTrip, riskDays, uniqueDays } = st;
+  const F=s=>`<span class="fn">${s}</span>`, C=s=>`<span class="fc">${s}</span>`,
+        M=s=>`<span class="fm">${s}</span>`, K=s=>`<span class="fk">${s}</span>`;
+  const u=tUnit(), muD=toDisp(mu).toFixed(2), sigD=sdDisp(sigma).toFixed(3), hThr=heatThrDisp();
+
+  if (tab === 'temperature') {
+    box.innerHTML=`<div class="formula-title">Temperature Distribution — ${F('Gaussian (Normal) Distribution')}</div>
+f${M('T')}(x) = 1/(σ·√(2π)) · exp(−½·((x−μ)/σ)²)
+<div class="formula-divider"></div>Fitted Parameters (recency-weighted 2005–2024):
+<br>  μ  (mean)     = ${C(muD+' '+u)}
+<br>  σ  (std dev)  = ${C(sigD+' '+u)}
+<br>  σ² (variance) = ${C((sdDisp(sigma)**2).toFixed(3)+' '+u+'²')}
+<div class="formula-divider"></div>Heat Risk Threshold: ${hThr}
+<br>  P(T > ${hThr}) = 1 − Φ((${toDisp(HEAT_THR_C).toFixed(1)} − ${muD}) / ${sigD}) = ${C(fmt6(pH))}
+<div class="formula-divider"></div>Trip Risk — Binomial(N=${uniqueDays}, p=${pH.toFixed(6)}):
+<br>  P(≥${riskDays} heat days) = ${C(fmt8(pHeatTrip))}`;
+
+  } else if (tab === 'precipitation') {
+    box.innerHTML=`<div class="formula-title">Precipitation Distribution — ${F('Gamma Distribution')} (wet days only)</div>
+f${M('P')}(x) = x^(α−1) · e^(−x/β) / (β^α · Γ(α))  for x > 0
+<div class="formula-divider"></div>Fitted Parameters (method of moments, recency-weighted):
+<br>  α (shape) = ${C(gamA.toFixed(4))}
+<br>  β (scale) = ${C(gamB.toFixed(4)+' mm')}
+= α·β = ${C((gamA*gamB).toFixed(2)+' mm/day')}
+<br>  Var[P]    = α·β² = ${C((gamA*gamB**2).toFixed(3)+' mm²')}
+<div class="formula-divider"></div>P(heavy rain day, precip > 25mm) ≈ ${C(fmt6(pR))}`;
+  } else if (tab === 'storm') {
+    box.innerHTML=`<div class="formula-title">Discrete Hazards — ${F('Bernoulli Distribution')}</div>P(Storm | day t) = ${K('p')}${M('S')}     P(No Storm) = 1 − ${K('p')}${M('S')}<br>P(Wind  | day t) = ${K('p')}${M('W')}     P(No Wind)  = 1 − ${K('p')}${M('W')}<div class="formula-divider"></div>Fitted Parameters (recency-weighted):<br>  p${M('S')} (thunderstorm, WMO 95/96/99) = ${C(fmt6(pS))}<br>  p${M('W')} (max wind > 50 km/h)          = ${C(fmt6(pW))}<div class="formula-divider"></div>Weather-Only (rain ∪ storm ∪ wind) Trip Risk:<br>  p${M('wx')} = ${C(st.pWxOnly.toFixed(6))}   P(≥${riskDays} days) = ${C(fmt8(pWxTrip))}`;
+  } else {
+    box.innerHTML=`<div class="formula-title">Joint Risk Model — ${F('Independence Composite + Binomial Trip Model')}</div>P(risk | day) = 1 − (1−p${M('H')})·(1−p${M('R')})·(1−p${M('S')})·(1−p${M('W')})<div class="formula-divider"></div>Component Probabilities (recency-weighted, thresholds in ${u}):<br>  p${M('H')} heat  T${M('max')} > ${hThr}    = ${C(fmt6(pH))}   [Normal CDF]<br>  p${M('R')} rain  P > 25mm       = ${C(fmt6(pR))}   [Gamma CDF]<br>  p${M('S')} storm WMO 95/96/99   = ${C(fmt6(pS))}   [Bernoulli]<br>  p${M('W')} wind  > 50 km/h      = ${C(fmt6(pW))}   [Bernoulli]<div class="formula-divider"></div>Daily Joint Risk:<br>  p${M('joint')} = 1−(1−${pH.toFixed(6)})·(1−${pR.toFixed(6)})·(1−${pS.toFixed(6)})·(1−${pW.toFixed(6)}) = ${C(fmt6(pD))}<div class="formula-divider"></div>Trip Risk — ${F('Binomial(N=')}${C(uniqueDays)}${F(', p=')}${C(pD.toFixed(6))}${F(')')}:<br>  P(X ≥ k) = 1 − Σ${M('i=0')}^${M('k−1')} C(N,i)·p^i·(1−p)^(N−i)<br>  P(≥${riskDays} joint bad-weather days)  = ${C(fmt8(pTrip))}<br>  P(≥${riskDays} heat-only days)          = ${C(fmt8(pHeatTrip))}<br>  P(≥${riskDays} rain/storm/wind days)    = ${C(fmt8(pWxTrip))}`;
+  }
+}
+
+// ── DATA TABLE ─────────────────────────────────────────────────────────────
+function renderTable(st){
+  const tb=document.getElementById('tableBody');tb.innerHTML='';
+  const u=tUnit(),cv=c=>isNaN(c)?'N/A':toDisp(c).toFixed(1)+u;
+  st.yearRows.forEach(r=>{
+    const jc=r.avgJR>0.5?'badge-high':r.avgJR>0.25?'badge-mid':'badge-low',tr=document.createElement('tr');
+    tr.innerHTML=`<td><strong>${r.yr}</strong></td><td style="font-size:0.78rem">${r.dateRange}</td><td>${r.days}</td><td>${r.weight.toFixed(4)}</td><td>${cv(r.avgT)}</td><td>${cv(r.maxT)}</td><td>${cv(r.minT)}</td><td>${cv(r.tP5)}</td><td>${cv(r.tP50)}</td><td>${cv(r.tP95)}</td><td>${isNaN(r.sd)?'N/A':sdDisp(r.sd).toFixed(2)+u}</td><td>${r.prec.toFixed(0)} mm</td><td>${isNaN(r.wind)?'N/A':r.wind.toFixed(0)+' km/h'}</td><td>${r.nHeat}</td><td>${r.nRain}</td><td>${r.nStorm}</td><td>${r.nWind}</td><td><span class="badge ${jc}">${(r.avgJR*100).toFixed(2)}%</span></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ── CSV EXPORT ─────────────────────────────────────────────────────────────
+function exportCSV(){
+  const hdr=['date','year','month','day','recency_weight','temp_max_c','temp_min_c','temp_mean_c','precip_mm','wind_max_kmh','weather_code','is_heat_risk','is_heavy_rain','is_storm','is_high_wind','is_wx_risk','joint_risk_daily'];
+  const rows=STATE.records.map(r=>[r.date,r.yr,r.mo,r.dy,r.weight.toFixed(5),safeN(r.tMax,2),safeN(r.tMin,2),safeN(r.tMean,2),r.prec.toFixed(2),safeN(r.wind,2),r.wCode,r.isHeat?1:0,r.isRain?1:0,r.isStorm?1:0,r.isWind?1:0,r.isWx?1:0,r.jointRisk.toFixed(6)].join(','));
+  const csv=[hdr.join(','),...rows].join('\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  Object.assign(document.createElement('a'),{href:url,download:'weathermytrip_daily.csv'}).click();
+  URL.revokeObjectURL(url);
+}
+
+// ── UTILITY ────────────────────────────────────────────────────────────────
+function fmt8(p){return(p*100).toFixed(8)+'%';}
+function fmt6(p){return(p*100).toFixed(6)+'%';}
+function safeN(v,d){return(v==null||isNaN(v)||!isFinite(v))?'N/A':v.toFixed(d);}
+function pad(n){return String(n).padStart(2,'0');}
+function setLoading(on){document.getElementById('loading').style.display=on?'':'none';document.getElementById('analyzeBtn').disabled=on;}
+function hideAll(){['results','placeholder','errorBanner','infoBanner'].forEach(hide);}
+function show(id){const el=document.getElementById(id);if(el){el.style.display='';el.classList.remove('hidden');}}
+function hide(id){const el=document.getElementById(id);if(el){el.classList.add('hidden');el.style.display='none';}}
+function showError(m){document.getElementById('errorText').textContent=m;show('errorBanner');}
+function showInfo(m){document.getElementById('infoText').textContent=m;show('infoBanner');}
+function destroyChart(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
+</script>
+</body>
+</html>
