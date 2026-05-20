@@ -111,7 +111,7 @@ Open `.env` and fill in your values:
 ```env
 SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...your-key...
-OPEN_METEO_API_KEY=xMRyXTtxQvlTsZmd
+OPEN_METEO_API_KEY=your-open-meteo-api-key
 ```
 
 Where to find each value:
@@ -171,7 +171,7 @@ In your Netlify site → **Site configuration → Environment variables**, add t
 |---|---|
 | `SUPABASE_URL` | `https://YOUR_PROJECT_REF.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGci...your-key...` |
-| `OPEN_METEO_API_KEY` | `xMRyXTtxQvlTsZmd` |
+| `OPEN_METEO_API_KEY` | `your-open-meteo-api-key` |
 
 After adding them, trigger a redeploy: **Deploys → Trigger deploy → Deploy site**.
 
