@@ -53,13 +53,11 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 # ── Redirects ─────────────────────────────────────────────
-# SPA fallback — not strictly needed for a single-page static site
-# but good practice if you add client-side routing later
+# SPA fallback — serves index.html for any unmatched path
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
   status = 200
-  conditions = {Role = ["admin"]}
 
 # ── Dev server ────────────────────────────────────────────
 [dev]
