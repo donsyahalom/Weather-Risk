@@ -27,7 +27,11 @@
   # Upgrade to Netlify Pro if you hit timeouts on first-run.
 
 [functions."analyze"]
-  # No extra config needed; inherits node_bundler above.
+  # Pro plan allows up to 26s — set explicitly so Netlify doesn't fall back
+  # to the free-tier 10s default during any plan transition window.
+  # The initial cache population (fetching + upserting ~7300 rows) takes
+  # ~10–22s. With 26s this completes in a single request.
+  timeout = 26
   # To enable background functions (async, up to 15 min) rename the
   # file to analyze-background.js and update the fetch URL accordingly.
 
