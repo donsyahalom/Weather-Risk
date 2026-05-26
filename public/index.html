@@ -156,6 +156,29 @@ main{max-width:1440px;margin:0 auto;padding:2rem}
 .forecast-day-stat-value.precip-mid{color:#f59e0b}
 .forecast-day-stat-value.precip-low{color:#10b981}
 .forecast-disclaimer{font-size:0.75rem;color:#0f766e;background:#ccfbf1;border-radius:8px;padding:0.6rem 0.9rem;margin-bottom:1rem;line-height:1.5}
+/* ── FORECAST HORIZON / LIMITATIONS PANEL ── */
+.forecast-horizon-panel{border-radius:14px;margin-bottom:1.5rem;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.08)}
+.fh-header{padding:0.9rem 1.5rem;color:white;display:flex;align-items:center;gap:0.6rem;font-weight:700;font-size:0.9rem;flex-wrap:wrap}
+.fh-header.fcst{background:linear-gradient(135deg,#0d9488,#0f766e)}
+.fh-header.hist{background:linear-gradient(135deg,#1e40af,#2563eb)}
+.fh-body{background:white;padding:1.1rem 1.5rem;border:2px solid rgba(0,0,0,0.06);border-top:none;border-radius:0 0 14px 14px}
+.fh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:0.55rem;margin-bottom:0.85rem}
+.fh-row{display:flex;align-items:flex-start;gap:0.55rem;padding:0.5rem 0.75rem;border-radius:8px;font-size:0.81rem}
+.fh-row.tier-1{background:#dcfce7;border:1px solid #86efac}
+.fh-row.tier-2{background:#fefce8;border:1px solid #fde047}
+.fh-row.tier-3{background:#fff7ed;border:1px solid #fdba74}
+.fh-row.tier-4{background:#fee2e2;border:1px solid #fca5a5}
+.fh-row.tier-active{box-shadow:0 0 0 2.5px #1e40af;font-weight:700}
+.fh-icon{flex-shrink:0;font-size:1rem;margin-top:0.05rem}
+.fh-text strong{display:block;font-size:0.81rem}
+.fh-text span{font-size:0.72rem;color:var(--muted)}
+.fh-note{font-size:0.79rem;color:var(--muted);line-height:1.55;padding:0.6rem 0.85rem;background:#f8fafc;border-radius:8px;border:1px solid var(--border)}
+/* Mode badge + historical compare bar */
+.mode-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.22rem 0.7rem;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.04em;margin-bottom:0.55rem}
+.mode-badge.fcst{background:rgba(13,148,136,0.15);color:#0f766e;border:1px solid #5eead4}
+.mode-badge.hist{background:rgba(30,64,175,0.12);color:#1e40af;border:1px solid #93c5fd}
+.hist-compare-bar{font-size:0.78rem;color:var(--muted);margin-top:0.65rem;padding:0.55rem 0.85rem;background:#f8fafc;border-radius:8px;border:1px solid var(--border);line-height:1.55}
+
 
 /* ── TABLE ── */
 .table-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem}
@@ -280,6 +303,9 @@ tbody tr:hover td{background:#f8fafc}
       </div>
     </div>
 
+    <!-- FORECAST LIMITATIONS / MODE INDICATOR -->
+    <div id="forecastLimitationsPanel" class="hidden"></div>
+
     <!-- LIVE FORECAST SECTION (shown only when trip is within 16 days) -->
     <div id="forecastSection" class="hidden">
       <div class="forecast-panel">
@@ -294,10 +320,14 @@ tbody tr:hover td{background:#f8fafc}
         </div>
         <div class="forecast-body">
           <div class="forecast-disclaimer">
-            <strong>How to read this:</strong> These are actual model-predicted probabilities for your specific travel dates —
-            not historical averages. Precipitation probability is the daily maximum of hourly ECMWF ensemble values.
-            Compare to the historical baseline below. Accuracy is highest within 7 days; 8–16 days is indicative.
-            Cross-check at <a id="forecastWindyLink2" href="#" target="_blank" style="color:#0f766e;font-weight:700">Windy.com</a> (select ECMWF model → Rain layer).
+            <strong>Forecast vs Historical:</strong> Each card shows the ECMWF-predicted value alongside the
+            historically expected value (median from 2005–2024) for that exact calendar date.
+            The <strong>Δ Anomaly</strong> row shows how far the forecast deviates from history —
+            a positive Δ means the model predicts a hotter or wetter day than history would expect.
+            Heat risk uses a dynamic threshold = the historical average tMax for this date window
+            (not a fixed number). Rain probability compares ECMWF model output directly against
+            historical rain frequency. Accuracy is highest within 7 days; 8–16 days is indicative.
+            Cross-check at <a id="forecastWindyLink2" href="#" target="_blank" style="color:#0f766e;font-weight:700">Windy.com</a> (ECMWF model → Rain / Temperature layer).
           </div>
           <div id="forecastDaysGrid" class="forecast-days-grid"></div>
         </div>
@@ -307,6 +337,7 @@ tbody tr:hover td{background:#f8fafc}
     <!-- HERO: three score boxes + breakdown grid -->
     <div class="risk-hero card" style="padding:1.25rem;margin-bottom:1.75rem">
       <div class="risk-scores">
+        <div id="heroModeBadge" class="mode-badge hist hidden"></div>
         <div class="risk-score-box">
           <div id="jointRiskVal" class="risk-score-value big">--%</div>
           <div class="risk-score-label">Joint Trip Risk<br>P(≥<span id="kLabel">--</span> bad-weather days)</div>
@@ -321,14 +352,15 @@ tbody tr:hover td{background:#f8fafc}
           <div class="risk-score-label">Weather-Only Trip Risk<br>P(≥<span id="kLabelW">--</span> rain/storm/wind days)</div>
         </div>
       </div>
+      <div id="histCompareBar" class="hist-compare-bar hidden"></div>
 
       <div>
-        <div style="font-size:0.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.85rem">Daily Risk Components — Recency-Weighted Historical Average (2005–2024)</div>
+        <div id="heroSubtitle" style="font-size:0.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.85rem">Daily Risk Components — Recency-Weighted Historical Average (2005–2024)</div>
         <div class="risk-grid">
           <div class="risk-item" style="border-left-color:#ef4444">
             <div class="risk-item-label">🌡 Heat Risk</div>
             <div id="rHeat" class="risk-item-value">------</div>
-            <div class="risk-item-sub" id="heatThrLabel">P(max temp &gt; 35°C)</div>
+            <div class="risk-item-sub" id="heatThrLabel">P(max temp &gt; historical avg)</div>
           </div>
           <div class="risk-item" style="border-left-color:#3b82f6">
             <div class="risk-item-label">🌧 Heavy Rain</div>
@@ -353,7 +385,7 @@ tbody tr:hover td{background:#f8fafc}
           <div class="risk-item" style="border-left-color:#94a3b8">
             <div class="risk-item-label">📅 Trip Days</div>
             <div id="rDays" class="risk-item-value" style="font-family:inherit;font-size:1.4rem">--</div>
-            <div class="risk-item-sub">days × <span id="rYears">--</span> historical years</div>
+            <div class="risk-item-sub" id="rDaysSub">days · <span id="rYears">--</span></div>
           </div>
         </div>
       </div>
@@ -428,7 +460,8 @@ tbody tr:hover td{background:#f8fafc}
 // ═══════════════════════════════════════════════════════════════════════════
 const API_ENDPOINT = '/.netlify/functions/analyze';
 
-const HEAT_THR_C   = 35;   // °C — always stored internally in Celsius
+let   HEAT_THR_C   = 35;   // °C — dynamically computed from historical data on each run
+const HEAT_THR_FALLBACK = 35; // °C — used if no historical data
 const RAIN_THR_MM  = 25;   // mm/day
 const WIND_THR_KMH = 50;   // km/h
 const STORM_CODES  = new Set([95, 96, 99]);
@@ -457,11 +490,16 @@ let useFahrenheit = false;
 function toDisp(c)     { return useFahrenheit ? c * 9/5 + 32 : c; }
 function sdDisp(s)     { return useFahrenheit ? s * 9/5 : s; }   // scale only, no offset
 function tUnit()       { return useFahrenheit ? '°F' : '°C'; }
-function heatThrDisp() { return useFahrenheit ? '95°F' : '35°C'; }
+function heatThrDisp() {
+  const v = HEAT_THR_C;
+  return useFahrenheit
+    ? `${(v * 9/5 + 32).toFixed(1)}°F`
+    : `${v.toFixed(1)}°C`;
+}
 
 // ── Global state ───────────────────────────────────────────────────────────
 let charts = {};
-let STATE  = { stats: null, records: [], pdfTab: 'joint', forecast: null };
+let STATE  = { stats: null, records: [], pdfTab: 'joint', forecast: null, forecastStats: null };
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  WINDY LINK
@@ -511,7 +549,15 @@ function onParamChange() {
     st.pHeatTrip = binomCDF(st.uniqueDays, st.pH,      riskDays);
     st.pWxTrip   = binomCDF(st.uniqueDays, st.pWxOnly, riskDays);
     st.riskDays  = riskDays;
-    updateHero(st, riskDays);
+    if (STATE.forecastStats) {
+      const fst    = STATE.forecastStats;
+      fst.pTrip     = binomCDF(fst.uniqueDays, fst.pD,      riskDays);
+      fst.pHeatTrip = binomCDF(fst.uniqueDays, fst.pH,      riskDays);
+      fst.pWxTrip   = binomCDF(fst.uniqueDays, fst.pWxOnly, riskDays);
+      fst.riskDays  = riskDays;
+    }
+    const active = STATE.forecastStats || st;
+    updateHero(active, riskDays, !!STATE.forecastStats, st);
     renderFormula(st, STATE.pdfTab);
   }
 }
@@ -520,7 +566,8 @@ function setUnit(u) {
   useFahrenheit = (u === 'F');
   document.getElementById('btnC').classList.toggle('active', !useFahrenheit);
   document.getElementById('btnF').classList.toggle('active',  useFahrenheit);
-  document.getElementById('heatThrLabel').textContent = `P(max temp > ${heatThrDisp()})`;
+  const thrSrc = isForecastMode ? 'historical avg for this date window' : '2005–2024 historical avg';
+  document.getElementById('heatThrLabel').textContent = `P(max temp > ${heatThrDisp()} — ${thrSrc})`;
   if (STATE.stats) {
     renderTempChart(STATE.stats);
     renderPDFChart(STATE.stats, STATE.pdfTab);
@@ -586,6 +633,8 @@ async function runAnalysis() {
 
     // Client-side compute timing
     const tCompute = performance.now();
+    // Compute adaptive threshold = weighted mean historical tMax for this date window
+    HEAT_THR_C  = computeDynamicHeatThreshold(raw);
     const recs  = processRecords(raw);
     const stats = computeStats(recs, riskDays);
     const computeMs = performance.now() - tCompute;
@@ -620,6 +669,25 @@ async function runAnalysis() {
     showError(e.message);
     console.error('[WeatherMyTrip]', e);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  DYNAMIC HEAT THRESHOLD
+//  Computes the recency-weighted mean of historical daily tMax for the
+//  queried calendar-date window. This becomes the heat-risk threshold so
+//  that "hot" means "above what history expects for these specific dates"
+//  rather than an arbitrary fixed value (e.g. 35 °C).
+// ═══════════════════════════════════════════════════════════════════════════
+function computeDynamicHeatThreshold(raw) {
+  const cy = new Date().getFullYear();
+  let sumWT = 0, sumW = 0;
+  for (const r of raw) {
+    if (r.tMax == null) continue;
+    const w = Math.exp(-LAMBDA * (cy - r.yr));
+    sumWT += r.tMax * w;
+    sumW  += w;
+  }
+  return sumW > 0 ? sumWT / sumW : HEAT_THR_FALLBACK;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -675,6 +743,7 @@ function computeStats(recs, riskDays) {
   return {
     pH, pR, pS, pW, pWxOnly, pD, pTrip, pHeatTrip, pWxTrip,
     riskDays, uniqueDays,
+    heatThr: HEAT_THR_C,
     mu, sigma,
     tP5:  wPct(temps, tempWs, 0.05),
     tP50: wPct(temps, tempWs, 0.50),
@@ -777,13 +846,26 @@ function renderAll(st, location, locationName, sm, sd, em, ed, riskDays, fromCac
     `<span class="meta-chip">📅 <strong>${pad(sm)}/${pad(sd)} → ${pad(em)}/${pad(ed)}</strong></span>`,
     `<span class="meta-chip">📊 <strong>${st.years} years</strong> (2005–2024)</span>`,
     `<span class="meta-chip">⚖️ Recency λ = ${LAMBDA}</span>`,
+    `<span class="meta-chip">🌡 Heat threshold: ${heatThrDisp()} (hist. avg tMax)</span>`,
     `<span class="meta-chip">🗄 ${(totalCached||0).toLocaleString()} rows cached</span>`,
     fromCache
       ? `<span class="meta-chip" style="border-color:#bbf7d0;color:#059669">✅ Supabase cache hit</span>`
       : `<span class="meta-chip" style="border-color:#fde68a;color:#b45309">🔄 Cache populated</span>`,
   ].join('');
 
-  updateHero(st, riskDays);
+  // Forecast-derived stats (replaces historical in hero when trip is within 16 days)
+  const fst = (forecast && forecast.length > 0) ? computeForecastStats(forecast, riskDays) : null;
+  STATE.forecastStats = fst;
+
+  // Forecast limitations / data-source mode panel
+  const startDateStr = document.getElementById('startDate').value;
+  renderForecastLimitations(startDateStr, !!fst, fst ? fst.forecastDays : 0);
+
+  // Hero uses forecast stats as primary source when available
+  const activeStats = fst || st;
+  updateHero(activeStats, riskDays, !!fst, st);
+
+  // Charts always show historical trend data for context
   renderTempChart(st);
   renderWxChart(st);
   renderRiskChart(st);
@@ -878,6 +960,147 @@ function metric(label, value, cls) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+//  FORECAST-DERIVED RISK STATS
+//  Converts ECMWF day-by-day predictions into the same {pH,pR,pS,pW,pD,...}
+//  structure used by historical stats, so hero scores reflect the actual
+//  forecast rather than 20-year averages.
+// ═══════════════════════════════════════════════════════════════════════════
+function computeForecastStats(forecast, riskDays) {
+  if (!forecast || forecast.length === 0) return null;
+  const n = forecast.length;
+
+  // pH — fraction of forecast days where ECMWF predicts temp above the historically
+  //      computed average tMax for this date window (HEAT_THR_C, set dynamically)
+  const heatDays  = forecast.filter(d => (d.tempMaxC  ?? -999) > HEAT_THR_C).length;
+  // pR — average model precipitation probability (0–100 → 0–1)
+  //      This is the direct forecast probability, not a historical frequency
+  const avgPrecipProb = forecast.reduce((s, d) => s + (d.precipProbPct ?? 0), 0) / n / 100;
+  // pS — fraction of forecast days with thunderstorm WMO code
+  const stormDays = forecast.filter(d => STORM_CODES.has(d.weatherCode ?? 0)).length;
+  // pW — fraction of forecast days with high wind gusts
+  const windDays  = forecast.filter(d => (d.windGustKmh ?? 0) > WIND_THR_KMH).length;
+
+  const pH      = heatDays  / n;
+  const pR      = avgPrecipProb;                   // continuous model probability
+  const pS      = stormDays / n;
+  const pW      = windDays  / n;
+  const pWxOnly = 1 - (1-pR) * (1-pS) * (1-pW);
+  const pD      = 1 - (1-pH) * (1-pR) * (1-pS) * (1-pW);
+
+  const pTrip     = binomCDF(n, pD,      riskDays);
+  const pHeatTrip = binomCDF(n, pH,      riskDays);
+  const pWxTrip   = binomCDF(n, pWxOnly, riskDays);
+
+  return {
+    pH, pR, pS, pW, pWxOnly, pD, pTrip, pHeatTrip, pWxTrip,
+    riskDays, uniqueDays: n, years: 0,
+    heatDays, stormDays, windDays, avgPrecipProb,
+    isForecast: true, forecastDays: n,
+    // Placeholders so formula/chart functions don't error
+    mu: NaN, sigma: NaN, gamA: NaN, gamB: NaN,
+    dayStats: [], yearRows: [], totalRecs: n,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  FORECAST HORIZON / LIMITATIONS PANEL
+//  Explains what forecast data is available and why dates far in the future
+//  (e.g. January 2027) cannot be forecast — only historical climatology.
+// ═══════════════════════════════════════════════════════════════════════════
+function renderForecastLimitations(startDateStr, hasForecast, forecastDays) {
+  const panel = document.getElementById('forecastLimitationsPanel');
+  if (!panel) return;
+
+  const today     = new Date(); today.setHours(0,0,0,0);
+  const tripStart = startDateStr ? new Date(startDateStr + 'T00:00:00') : null;
+  const daysAway  = tripStart ? Math.round((tripStart - today) / 86400000) : null;
+
+  const tiers = [
+    { label:'0 – 7 days',   cls:'tier-1', icon:'✅', desc:'High confidence — ECMWF IFS (±1–2 °C, ACC > 0.8)' },
+    { label:'8 – 14 days',  cls:'tier-2', icon:'⚠️', desc:'Medium confidence — skill degrades rapidly past day 8' },
+    { label:'15 – 16 days', cls:'tier-3', icon:'🔶', desc:'Low confidence — borderline of model predictive skill' },
+    { label:'17+ days',     cls:'tier-4', icon:'❌', desc:'No deterministic forecast — historical climatology only' },
+  ];
+
+  const activeTier =
+    daysAway === null ? -1 :
+    daysAway <= 7     ? 0  :
+    daysAway <= 14    ? 1  :
+    daysAway <= 16    ? 2  : 3;
+
+  const tierGrid = tiers.map((t, i) => `
+    <div class="fh-row ${t.cls}${i === activeTier ? ' tier-active' : ''}">
+      <span class="fh-icon">${t.icon}</span>
+      <div class="fh-text"><strong>${t.label}</strong><span>${t.desc}</span></div>
+    </div>`).join('');
+
+  if (hasForecast) {
+    const confLabel = activeTier === 0 ? 'High confidence (0–7 days)' :
+                      activeTier === 1 ? 'Medium confidence (8–14 days)' :
+                                         'Low confidence (15–16 days)';
+    panel.innerHTML = `
+      <div class="forecast-horizon-panel">
+        <div class="fh-header fcst">
+          📡 FORECAST MODE — ${forecastDays}-day ECMWF forecast active &nbsp;·&nbsp; ${confLabel}
+        </div>
+        <div class="fh-body">
+          <div style="font-size:0.83rem;color:var(--text);margin-bottom:0.75rem">
+            The risk scores above are computed from <strong>actual ECMWF model predictions</strong>
+            for your specific trip dates — not from 20-year averages.
+            Precipitation probability is the model's direct output (0–100%).
+            The historical baseline (2005–2024) is shown below for comparison.
+          </div>
+          <div class="fh-grid">${tierGrid}</div>
+          <div class="fh-note">
+            <strong>How to cross-check:</strong> Open
+            <a href="${windyUrl(document.getElementById('location').value)}" target="_blank"
+               style="color:var(--primary);font-weight:700">Windy.com</a>
+            → select the ECMWF model → Rain or Temperature layer.
+            ECMWF anomaly correlation (ACC) skill typically exceeds 0.8 within 7 days,
+            drops to ~0.5 at 14 days, and is indistinguishable from climatology beyond 16–18 days.
+          </div>
+        </div>
+      </div>`;
+  } else {
+    const monthsAway = daysAway != null ? (daysAway / 30.4).toFixed(1) : '?';
+    const dateLabel  = tripStart
+      ? tripStart.toLocaleDateString('en-US', { month:'long', year:'numeric' })
+      : 'this date';
+    panel.innerHTML = `
+      <div class="forecast-horizon-panel">
+        <div class="fh-header hist">
+          📊 HISTORICAL CLIMATOLOGY — No forecast available for ${dateLabel}
+          ${daysAway != null ? `(${daysAway} days / ${monthsAway} months away)` : ''}
+        </div>
+        <div class="fh-body">
+          <div style="font-size:0.83rem;color:var(--text);margin-bottom:0.75rem">
+            <strong>Can ${dateLabel} be forecast?</strong>
+            No — the global limit for deterministic numerical weather prediction is ~16 days.
+            ${daysAway != null
+              ? `Your trip starts in <strong>${daysAway} days (${monthsAway} months)</strong>, far beyond any forecast horizon.`
+              : ''}
+            Risk scores are computed from <strong>20 years of observed data (2005–2024)</strong>
+            for the same calendar dates — the scientifically accepted best estimate
+            for any date more than three weeks away.
+          </div>
+          <div class="fh-grid">${tierGrid}</div>
+          <div class="fh-note">
+            <strong>Why is 16 days the limit?</strong>
+            The atmosphere is a chaotic system — small errors in initial conditions grow
+            exponentially (Lorenz, 1969). ECMWF's best-in-class model loses meaningful skill
+            beyond ~16 days for any specific location.
+            Subseasonal-to-seasonal (S2S) models extend to 6 weeks with very low precision.
+            Seasonal outlooks (NOAA CFS, ECMWF SEAS) extend to 6–9 months but only predict
+            broad temperature/precipitation anomalies for large regions, not day-by-day weather.
+            <strong>For trip planning beyond 3 weeks, historical climatology is your best tool.</strong>
+          </div>
+        </div>
+      </div>`;
+  }
+  panel.classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 //  LIVE FORECAST SECTION
 // ═══════════════════════════════════════════════════════════════════════════
 function renderForecast(forecast, st) {
@@ -905,24 +1128,60 @@ function renderForecast(forecast, st) {
     const precipStr  = pPrecip != null ? `${pPrecip}%` : 'N/A';
     const dateLabel  = new Date(day.date + 'T12:00:00').toLocaleDateString('en-US',
       { weekday:'short', month:'short', day:'numeric' });
-    const histNote   = hist ? `Hist: ${(hist.pR*100).toFixed(0)}% rain avg` : '';
+    // ── Historical baseline comparison ────────────────────────────────────
+    // hist.tP50 = historical median tMax for this calendar date (from 20yr data)
+    // This is the "historically expected" temperature — our baseline forecast
+    const histMed    = hist ? hist.tP50        : null;   // historical median max temp
+    const histRainPr = hist ? hist.pR          : null;   // historical rain frequency
+    const histMedDisp = histMed != null ? `${toDisp(histMed).toFixed(1)}${u}` : null;
+
+    // Temperature anomaly: forecast vs what history expects for this date
+    const tempAnom = (day.tempMaxC != null && histMed != null)
+      ? day.tempMaxC - histMed : null;
+    const tempAnomDisp = tempAnom != null
+      ? `${tempAnom >= 0 ? '+' : ''}${(useFahrenheit ? tempAnom*9/5 : tempAnom).toFixed(1)}${u} vs hist avg`
+      : '';
+    const tempAnomCls = tempAnom == null ? '' : tempAnom > 2 ? 'precip-high' : tempAnom < -2 ? 'precip-low' : '';
+
+    // Rain anomaly: ECMWF forecast prob vs historical rain frequency
+    const rainAnom = (pPrecip != null && histRainPr != null)
+      ? (pPrecip / 100) - histRainPr : null;
+    const rainAnomDisp = rainAnom != null
+      ? `${rainAnom >= 0 ? '+' : ''}${(rainAnom*100).toFixed(0)}% vs hist ${(histRainPr*100).toFixed(0)}%`
+      : (hist ? `Hist avg: ${(histRainPr*100).toFixed(0)}%` : '');
+    const rainAnomCls = rainAnom == null ? '' : rainAnom > 0.2 ? 'precip-high' : rainAnom > 0.05 ? 'precip-mid' : 'precip-low';
 
     return `<div class="forecast-day-card">
       <div class="forecast-day-date">${dateLabel}</div>
       <div class="forecast-day-wmo">${wmo}</div>
       <div class="forecast-day-stat">
+        <span class="forecast-day-stat-label">🌡 Forecast high</span>
+        <span class="forecast-day-stat-value${isHotDay ? ' precip-high' : ''}">${tMax}</span>
+      </div>
+      ${histMedDisp ? `<div class="forecast-day-stat">
+        <span class="forecast-day-stat-label" style="color:#0f766e">📊 Hist avg high</span>
+        <span class="forecast-day-stat-value" style="color:#0f766e">${histMedDisp}</span>
+      </div>` : ''}
+      ${tempAnomDisp ? `<div class="forecast-day-stat">
+        <span class="forecast-day-stat-label">Δ Anomaly</span>
+        <span class="forecast-day-stat-value ${tempAnomCls}">${tempAnomDisp}</span>
+      </div>` : ''}
+      <div class="forecast-day-stat">
         <span class="forecast-day-stat-label">🌧 Precip prob</span>
         <span class="forecast-day-stat-value ${precipCls}">${precipStr}</span>
       </div>
+      ${rainAnomDisp ? `<div class="forecast-day-stat">
+        <span class="forecast-day-stat-label" style="color:#64748b;font-size:0.7rem">${rainAnomDisp}</span>
+        <span class="forecast-day-stat-value ${rainAnomCls}"></span>
+      </div>` : ''}
       <div class="forecast-day-stat">
-        <span class="forecast-day-stat-label">🌡 High / Low</span>
-        <span class="forecast-day-stat-value${isHotDay ? ' precip-high' : ''}">${tMax} / ${tMin}</span>
+        <span class="forecast-day-stat-label">🌡 Low</span>
+        <span class="forecast-day-stat-value">${tMin}</span>
       </div>
       <div class="forecast-day-stat">
         <span class="forecast-day-stat-label">💨 Wind gust</span>
         <span class="forecast-day-stat-value${isHighWind ? ' precip-high' : ''}">${wind}</span>
       </div>
-      ${histNote ? `<div style="font-size:0.67rem;color:#0f766e;margin-top:0.35rem;border-top:1px solid #ccfbf1;padding-top:0.3rem">${histNote}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -930,7 +1189,7 @@ function renderForecast(forecast, st) {
 // ═══════════════════════════════════════════════════════════════════════════
 //  HERO
 // ═══════════════════════════════════════════════════════════════════════════
-function updateHero(st, riskDays) {
+function updateHero(st, riskDays, isForecastMode, histSt) {
   // Big score boxes — 8 decimal places
   document.getElementById('jointRiskVal').textContent = fmt8(st.pTrip);
   document.getElementById('heatTripVal').textContent  = fmt8(st.pHeatTrip);
@@ -946,14 +1205,54 @@ function updateHero(st, riskDays) {
   document.getElementById('rWind').textContent  = fmt6(st.pW);
   document.getElementById('rJoint').textContent = fmt6(st.pD);
   document.getElementById('rDays').textContent  = st.uniqueDays;
-  document.getElementById('rYears').textContent = st.years;
-  document.getElementById('heatThrLabel').textContent = `P(max temp > ${heatThrDisp()})`;
+  const thrSrc = isForecastMode ? 'historical avg for this date window' : '2005–2024 historical avg';
+  document.getElementById('heatThrLabel').textContent = `P(max temp > ${heatThrDisp()} — ${thrSrc})`;
+
+  // Mode badge
+  const modeEl = document.getElementById('heroModeBadge');
+  if (modeEl) {
+    modeEl.classList.remove('hidden');
+    if (isForecastMode) {
+      modeEl.className = 'mode-badge fcst';
+      modeEl.textContent = `📡 Forecast-Derived Risk · ${st.forecastDays} ECMWF days`;
+      document.getElementById('rYears').textContent = `${st.forecastDays}-day ECMWF`;
+      document.getElementById('rDaysSub').innerHTML =
+        `forecast days · <span id="rYears">${st.forecastDays}-day ECMWF</span>`;
+    } else {
+      modeEl.className = 'mode-badge hist';
+      modeEl.textContent = '📊 Historical Climatology · 2005–2024';
+      document.getElementById('rYears').textContent = `${st.years} yrs`;
+      document.getElementById('rDaysSub').innerHTML =
+        `days · <span id="rYears">${st.years} historical yrs</span>`;
+    }
+  }
+
+  // Hero subtitle
+  const subtitleEl = document.getElementById('heroSubtitle');
+  if (subtitleEl) {
+    subtitleEl.textContent = isForecastMode
+      ? `Forecast Risk Components — ECMWF Predicted Values (${st.forecastDays}-day horizon)`
+      : 'Daily Risk Components — Recency-Weighted Historical Average (2005–2024)';
+  }
 
   const rating   = st.pTrip >= 0.6 ? 'HIGH RISK' : st.pTrip >= 0.3 ? 'MODERATE RISK' : 'LOW RISK';
   const ratingEl = document.getElementById('ratingBadge');
   ratingEl.textContent  = rating;
   ratingEl.style.background = st.pTrip >= 0.6 ? 'rgba(239,68,68,0.35)'
     : st.pTrip >= 0.3 ? 'rgba(245,158,11,0.35)' : 'rgba(16,185,129,0.35)';
+
+  // Historical compare bar (shown when forecast mode is active)
+  const compEl = document.getElementById('histCompareBar');
+  if (compEl) {
+    if (isForecastMode && histSt) {
+      compEl.innerHTML = `<strong>📊 Historical baseline (2005–2024):</strong>
+        Joint ${fmt6(histSt.pD)} &nbsp;·&nbsp; Heat ${fmt6(histSt.pH)} &nbsp;·&nbsp;
+        Rain ${fmt6(histSt.pR)} &nbsp;·&nbsp; Storm ${fmt6(histSt.pS)} &nbsp;·&nbsp; Wind ${fmt6(histSt.pW)}`;
+      compEl.classList.remove('hidden');
+    } else {
+      compEl.classList.add('hidden');
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
