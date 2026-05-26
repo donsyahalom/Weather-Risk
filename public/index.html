@@ -180,6 +180,27 @@ main{max-width:1440px;margin:0 auto;padding:2rem}
 .hist-compare-bar{font-size:0.78rem;color:var(--muted);margin-top:0.65rem;padding:0.55rem 0.85rem;background:#f8fafc;border-radius:8px;border:1px solid var(--border);line-height:1.55}
 
 
+
+/* ── THRESHOLD CARD ── */
+.threshold-card{border-radius:14px;margin-bottom:1.5rem;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.1);border:2px solid #a855f7}
+.threshold-card-header{background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem}
+.threshold-card-title{font-size:0.95rem;font-weight:700}
+.threshold-card-sub{font-size:0.75rem;opacity:0.85;margin-top:0.1rem}
+.threshold-card-body{background:white;padding:1.25rem 1.5rem;border:2px solid #a855f7;border-top:none;border-radius:0 0 14px 14px}
+.threshold-cols{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1rem}
+@media(max-width:700px){.threshold-cols{grid-template-columns:1fr}}
+.threshold-col{background:#faf5ff;border:1px solid #d8b4fe;border-radius:10px;padding:1rem 1.2rem}
+.threshold-col-title{font-size:0.72rem;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.6rem;padding-bottom:0.4rem;border-bottom:1px solid #d8b4fe}
+.threshold-bound{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;font-size:0.85rem}
+.threshold-bound-label{color:var(--muted);font-size:0.76rem}
+.threshold-bound-value{font-weight:800;color:#5b21b6;font-family:'Courier New',monospace;font-size:0.95rem}
+.threshold-stat{font-size:0.74rem;color:var(--muted);margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid #ede9fe;line-height:1.5}
+.threshold-status{display:flex;align-items:center;gap:0.7rem;padding:0.75rem 1rem;border-radius:10px;font-size:0.85rem;font-weight:600}
+.threshold-status.safe{background:#d1fae5;border:1px solid #6ee7b7;color:#065f46}
+.threshold-status.warn{background:#fef3c7;border:1px solid #fcd34d;color:#92400e}
+.threshold-status.danger{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}
+.threshold-status-icon{font-size:1.2rem}
+
 /* ── TABLE ── */
 .table-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem}
 .table-wrapper{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:480px;overflow-y:auto}
@@ -302,6 +323,9 @@ tbody tr:hover td{background:#f8fafc}
         </div>
       </div>
     </div>
+
+    <!-- CONFIDENCE INTERVAL THRESHOLD CARD -->
+    <div id="thresholdCard" class="hidden"></div>
 
     <!-- FORECAST LIMITATIONS / MODE INDICATOR -->
     <div id="forecastLimitationsPanel" class="hidden"></div>
@@ -559,6 +583,7 @@ function onParamChange() {
     const active = STATE.forecastStats || st;
     updateHero(active, riskDays, !!STATE.forecastStats, st);
     renderFormula(st, STATE.pdfTab);
+    renderThresholdCard(computeThresholds(st, riskDays), st);
   }
 }
 
@@ -834,7 +859,168 @@ function normalPDF(x,mu,sig){return Math.exp(-0.5*((x-mu)/sig)**2)/(sig*Math.sqr
 function normalCDF(x,mu,sig){return 0.5*(1+erf((x-mu)/(sig*Math.sqrt(2))))}
 function erf(z){const t=1/(1+0.5*Math.abs(z));const tau=t*Math.exp(-z*z-1.26551223+t*(1.00002368+t*(0.37409196+t*(0.09678418+t*(-0.18628806+t*(0.27886807+t*(-1.13520398+t*(1.48851587+t*(-0.82215223+t*0.17087294)))))))));return z>=0?1-tau:tau-1}
 function gammaPDF(x,a,b){if(x<=0)return 0;return Math.pow(x,a-1)*Math.exp(-x/b)/(Math.pow(b,a)*gammaFn(a))}
+function gammaCDF(x,a,b){
+  // Numerical CDF via midpoint-rule integration of gammaPDF
+  if(x<=0)return 0;
+  const n=600,dx=x/n;
+  let s=0;
+  for(let i=0;i<n;i++) s+=gammaPDF((i+0.5)*dx,a,b)*dx;
+  return Math.min(s,1);
+}
 function gammaFn(n){if(n<0.5)return Math.PI/(Math.sin(Math.PI*n)*gammaFn(1-n));n-=1;const g=7,c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];let x=c[0];for(let i=1;i<g+2;i++)x+=c[i]/(n+i);const t=n+g+0.5;return Math.sqrt(2*Math.PI)*Math.pow(t,n+0.5)*Math.exp(-t)*x}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  CONFIDENCE INTERVAL THRESHOLD SOLVERS
+//  Binary-search for the tightest [X,Y] / T that keeps trip risk < 2%.
+//  Temperature: symmetric CI around historical μ — find z s.t.
+//    P(≥ riskDays days with tMean outside [μ−zσ, μ+zσ]) < 0.02
+//  Rain: find T (mm) s.t.
+//    P(≥ riskDays days with precip > T) < 0.02
+// ═══════════════════════════════════════════════════════════════════════════
+function findTempCI(mu, sigma, uniqueDays, riskDays, target) {
+  target = target || 0.02;
+  if(sigma<=0||isNaN(mu)||isNaN(sigma))return null;
+  let lo=0,hi=10;
+  for(let i=0;i<80;i++){
+    const mid=(lo+hi)/2;
+    const pOut=2*(1-normalCDF(mu+mid*sigma,mu,sigma));
+    if(binomCDF(uniqueDays,Math.max(pOut,0),riskDays)<target) hi=mid; else lo=mid;
+  }
+  const z=(lo+hi)/2;
+  const pOut=Math.max(2*(1-normalCDF(mu+z*sigma,mu,sigma)),0);
+  return {
+    lo: mu-z*sigma, hi: mu+z*sigma, z,
+    pOut, pTrip:binomCDF(uniqueDays,pOut,riskDays),
+    ciPct:(1-pOut)*100,
+  };
+}
+
+function findRainThreshold(gamA, gamB, pWet, uniqueDays, riskDays, target) {
+  target = target || 0.02;
+  if(isNaN(gamA)||isNaN(gamB)||gamA<=0||gamB<=0||pWet<=0)return null;
+  // Start search from a small value and go up to 500 mm
+  let lo=0,hi=500;
+  for(let i=0;i<80;i++){
+    const mid=(lo+hi)/2;
+    const pAbove=pWet*(1-gammaCDF(mid,gamA,gamB));
+    if(binomCDF(uniqueDays,Math.max(pAbove,0),riskDays)<target) hi=mid; else lo=mid;
+  }
+  const T=(lo+hi)/2;
+  const pAbove=pWet*(1-gammaCDF(T,gamA,gamB));
+  return {
+    threshold:T,
+    pAbove, pTrip:binomCDF(uniqueDays,Math.max(pAbove,0),riskDays),
+  };
+}
+
+function computeThresholds(stats, riskDays) {
+  const recs = STATE.records;
+  if(!recs||recs.length===0) return null;
+  const W    = recs.reduce((s,r)=>s+r.weight,0);
+  const pWet = recs.filter(r=>(r.prec||0)>0).reduce((s,r)=>s+r.weight,0)/W;
+  const tempCI   = findTempCI(stats.mu, stats.sigma, stats.uniqueDays, riskDays);
+  const rainThr  = findRainThreshold(stats.gamA, stats.gamB, pWet, stats.uniqueDays, riskDays);
+  return { tempCI, rainThr, pWet, currentTripRisk: stats.pTrip, riskDays, uniqueDays: stats.uniqueDays };
+}
+
+function renderThresholdCard(thr, stats) {
+  const card = document.getElementById('thresholdCard');
+  if(!card) return;
+  if(!thr||!stats){card.classList.add('hidden');return;}
+  const u = tUnit();
+  const TARGET = 0.02;
+
+  // Temperature column
+  let tempHtml = '<div class="threshold-col-title">🌡 Temperature Safe Window</div>';
+  if(thr.tempCI){
+    const loT = toDisp(thr.tempCI.lo).toFixed(1)+u;
+    const hiT = toDisp(thr.tempCI.hi).toFixed(1)+u;
+    const sdS = sdDisp(stats.sigma).toFixed(2)+u;
+    tempHtml += `
+      <div class="threshold-bound">
+        <span class="threshold-bound-label">Lower bound (X)</span>
+        <span class="threshold-bound-value">${loT}</span>
+      </div>
+      <div class="threshold-bound">
+        <span class="threshold-bound-label">Upper bound (Y)</span>
+        <span class="threshold-bound-value">${hiT}</span>
+      </div>
+      <div class="threshold-stat">
+        Hist. mean: ${toDisp(stats.mu).toFixed(1)}${u} &nbsp;·&nbsp; σ = ${sdS}<br>
+        Bounds = μ ± ${thr.tempCI.z.toFixed(2)}σ &nbsp;·&nbsp; CI = ${thr.tempCI.ciPct.toFixed(1)}%<br>
+        P(outside CI per day) = ${(thr.tempCI.pOut*100).toFixed(3)}%<br>
+        <strong>P(trip ≥${thr.riskDays} extreme-temp days) = ${(thr.tempCI.pTrip*100).toFixed(4)}%</strong>
+      </div>`;
+  } else {
+    tempHtml += '<div class="threshold-stat" style="color:var(--muted)">Insufficient data for Normal fit</div>';
+  }
+
+  // Rain column
+  let rainHtml = '<div class="threshold-col-title">🌧 Rain Threshold</div>';
+  if(thr.rainThr){
+    rainHtml += `
+      <div class="threshold-bound">
+        <span class="threshold-bound-label">Max safe daily precip (T)</span>
+        <span class="threshold-bound-value">${thr.rainThr.threshold.toFixed(1)} mm/day</span>
+      </div>
+      <div class="threshold-stat">
+        Wet day fraction: ${(thr.pWet*100).toFixed(1)}%<br>
+        Gamma(α=${stats.gamA.toFixed(2)}, β=${stats.gamB.toFixed(2)} mm)<br>
+        P(precip > T per day) = ${(thr.rainThr.pAbove*100).toFixed(3)}%<br>
+        <strong>P(trip ≥${thr.riskDays} heavy-rain days) = ${(thr.rainThr.pTrip*100).toFixed(4)}%</strong>
+      </div>`;
+  } else {
+    rainHtml += '<div class="threshold-stat" style="color:var(--muted)">Insufficient wet-day data for Gamma fit</div>';
+  }
+
+  // Status bar
+  const curPct = (stats.pTrip*100).toFixed(2)+'%';
+  let statusCls, statusIcon, statusMsg;
+  if(stats.pTrip < TARGET){
+    statusCls='safe'; statusIcon='✅';
+    statusMsg=`Current trip risk is already ${curPct} — below the 2% target. Thresholds above are the bounds that would raise risk to exactly 2%.`;
+  } else if(stats.pTrip < 0.10){
+    statusCls='warn'; statusIcon='⚠️';
+    statusMsg=`Current trip risk is ${curPct}. The bounds above define the temperature and rain levels that need to occur for trip risk to stay under 2%.`;
+  } else {
+    statusCls='danger'; statusIcon='🔴';
+    statusMsg=`Current trip risk is ${curPct} — elevated. Under current conditions, a low-risk trip would require temperatures within the CI bounds and rain below ${thr.rainThr?thr.rainThr.threshold.toFixed(0)+'mm':'the threshold'} nearly every day.`;
+  }
+
+  card.innerHTML = `
+    <div class="threshold-card">
+      <div class="threshold-card-header">
+        <div>
+          <div class="threshold-card-title">🎯  Safe Travel Window — Thresholds for &lt; 2% Trip Risk</div>
+          <div class="threshold-card-sub">Historical Normal + Gamma fits · Binomial(N=${thr.uniqueDays}, k≥${thr.riskDays}) · Binary-search solver</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.18);border-radius:8px;padding:0.35rem 0.85rem;font-size:0.78rem;font-weight:700">
+          Target: &lt; 2.00% · Current: ${curPct}
+        </div>
+      </div>
+      <div class="threshold-card-body">
+        <div class="threshold-cols">
+          <div class="threshold-col">${tempHtml}</div>
+          <div class="threshold-col">${rainHtml}</div>
+        </div>
+        <div class="threshold-status ${statusCls}">
+          <span class="threshold-status-icon">${statusIcon}</span>
+          <span>${statusMsg}</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:0.75rem;line-height:1.55">
+          <strong>How to read:</strong>
+          Temperature bounds [X, Y] are symmetric around the historical mean ± z standard deviations.
+          A day counts as "outside normal" when the daily mean temp falls outside this window.
+          The rain threshold T is the daily precipitation level where, if exceeded, the day counts as "heavy rain."
+          Both thresholds are set so that the Binomial probability of experiencing ≥${thr.riskDays} such days
+          during your ${thr.uniqueDays}-day trip is less than 2%.
+          Historical data: 2005–2024, recency-weighted (λ=0.1).
+        </div>
+      </div>
+    </div>`;
+  card.classList.remove('hidden');
+}
+
 function linspace(a,b,n){const s=(b-a)/(n-1);return Array.from({length:n},(_,i)=>a+i*s)}
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -873,6 +1059,7 @@ function renderAll(st, location, locationName, sm, sd, em, ed, riskDays, fromCac
   renderFormula(st, STATE.pdfTab);
   renderTable(st);
   renderForecast(forecast, st);
+  renderThresholdCard(computeThresholds(st, riskDays), st);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
